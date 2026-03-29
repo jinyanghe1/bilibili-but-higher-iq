@@ -1,0 +1,10 @@
+{
+  "taskId": "020",
+  "agentId": "codex",
+  "files": [
+    "storage/blocklist-manager.js",
+    "ui/options/options.js",
+    "ui/popup/popup.js"
+  ],
+  "claimedAt": "2026-03-29T12:07:00.000000Z"
+}

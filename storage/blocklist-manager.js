@@ -3,6 +3,11 @@
 // Note: This file uses Dexie.js for IndexedDB. In production, include:
 // <script src="https://unpkg.com/dexie@3/dist/dexie.min.js"></script>
 
+import {
+  DEFAULT_SETTINGS,
+  KEYWORD_BLOCKLISTS
+} from '../utils/constants.js';
+
 const DB_NAME = 'BilibiliQualityFilterDB';
 const DB_VERSION = 1;
 
@@ -69,49 +74,6 @@ async function initDB() {
   });
 }
 
-// Default keyword blocklists
-const KEYWORD_BLOCKLISTS = {
-  rageBait: {
-    name: 'Rage Bait',
-    nameZh: '引战内容',
-    weight: 0.8,
-    severity: 'high',
-    keywords: [
-      '引战', '撕逼', '对立', '恰烂钱', '恰流量',
-      '阴阳怪气', '呵呵', '孝子', '美分', '五毛',
-      '脑残', '智障', '废物', '垃圾', '有病',
-      '舔狗', '海王', '绿茶', '圣母', '白莲花',
-      '杠精', '喷子', '键盘侠', '柠檬精', '酸了'
-    ]
-  },
-  clickbait: {
-    name: 'Clickbait',
-    nameZh: '标题党',
-    weight: 0.6,
-    severity: 'medium',
-    keywords: [
-      '震惊', '必看', '绝了', '绝了绝了', '笑死',
-      '哭', '破防', '绷不住', '爆笑', '搞笑',
-      '秒了', '碾压', '封神', '天花板', '神作',
-      '炸裂', 'YYDS', '绝了绝了', '太牛了', '牛蛙',
-      '哭死', '笑抽', '笑崩', '破大防', '绷不住了',
-      '太绝了', '这也太', '竟然', '居然', '万万没想到'
-    ]
-  },
-  homogenized: {
-    name: 'Homogenized',
-    nameZh: '同质化内容',
-    weight: 0.7,
-    severity: 'high',
-    keywords: [
-      '搬运', '抄袭', '盗摄', '二创', '转载',
-      '素材', '来源', '侵删', '侵权', '盗版',
-      '抄袭', '融梗', '洗稿', '抄袭狗', '盗图',
-      '二改', '改改', '素材来源', '非原创', '抱走'
-    ]
-  }
-};
-
 // BlocklistManager class
 export class BlocklistManager {
   constructor() {
@@ -135,7 +97,6 @@ export class BlocklistManager {
   }
 
   async countKeywords() {
-    await this.init();
     const database = await initDB();
     return new Promise((resolve, reject) => {
       const tx = database.transaction('keywords', 'readonly');
@@ -178,7 +139,7 @@ export class BlocklistManager {
       const tx = database.transaction('keywords', 'readonly');
       const store = tx.objectStore('keywords');
       const index = store.index('enabled');
-      const request = index.getAll(1);
+      const request = index.getAll(true);
 
       request.onsuccess = () => {
         const keywords = request.result;
@@ -213,7 +174,7 @@ export class BlocklistManager {
       const tx = database.transaction('keywords', 'readonly');
       const store = tx.objectStore('keywords');
       const index = store.index('enabled');
-      const request = index.getAll(1);
+      const request = index.getAll(true);
 
       request.onsuccess = () => {
         this._keywordCache = request.result;
@@ -334,6 +295,10 @@ export class BlocklistManager {
     return new Set(users.map(u => u.uid));
   }
 
+  async getSettings() {
+    return getSettings();
+  }
+
   async addFeedback(type, targetId, action) {
     await this.init();
 
@@ -441,18 +406,6 @@ export class BlocklistManager {
     this._blockedUsersCache = null;
   }
 }
-
-// Default settings
-const DEFAULT_SETTINGS = {
-  enabled: true,
-  filterRageBait: true,
-  filterClickbait: true,
-  filterHomogenized: true,
-  filterComments: true,
-  dimInsteadOfHide: false,
-  autoCollapseComments: true,
-  showBlockUserButton: true
-};
 
 // Get settings from chrome.storage
 export async function getSettings() {

@@ -1,0 +1,8 @@
+{
+  "taskId": "018",
+  "agentId": "copilot-cli-gpt-5.4",
+  "files": [
+    "tests/e2e/shadow-dom-integration.test.mjs"
+  ],
+  "claimedAt": "2026-03-29T11:53:10.676028Z"
+}

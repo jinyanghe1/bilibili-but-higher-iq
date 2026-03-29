@@ -1,152 +1,201 @@
-# 🧠 Bilibili Quality Filter
+# Bilibili But Higher IQ
 
-### Your favorite video site's filter for people who actually have taste.
+在互联网上，你对面的人可能是一个小学生。  
+但我们为什么要把整个互联网，都做成“小孩桌”呢？
 
-<p align="center">
-  <img src="https://img.shields.io/badge/Manifest-V3-blue?style=flat-square" alt="Manifest V3">
-  <img src="https://img.shields.io/badge/Platforms-Chrome%20%7C%20Firefox%20%7C%20Safari-green?style=flat-square" alt="Platforms">
-  <img src="https://img.shields.io/badge/License-MIT-yellow?style=flat-square" alt="License">
-</p>
+如果你已经受够了这些东西：
 
----
+- 首页一眼望去，全是情绪钩子、标题党、低质搬运
+- 评论区不是在讨论，是在复读、拱火、比烂
+- 你明明想找点正常内容，却总被平台往最低注意力密度的地方拖
 
-## 😤 The Problem
+这个扩展就是拿来干这个的：**帮你把 B 站里的低质量噪音筛掉一点，让“正常内容”和“正常人说话”重新有机会被看见。**
 
-You've been on Bilibili for 5 minutes. You've already seen:
-- **"震惊!必看!绝了绝了绝了!"**
-- **"第X个原因让你..."**
-- **"搬运|抄袭|素材来源:侵删"**
-
-Your soul is leaving your body. Your remaining brain cells are filing a class action lawsuit.
-
-## ✨ The Solution
-
-Bilibili Quality Filter (BQF) is like having a wise friend who quietly removes the garbage from your feed so you can enjoy actual content.
-
-### What it does:
-
-| Filter Type | Catches | Examples |
-|-------------|---------|----------|
-| 🔥 **Rage Bait** | Provocative content designed to trigger reactions | 引战, 撕逼, 阴阳怪气 |
-| 🎯 **Clickbait** | Sensational titles that overpromise | 震惊, 必看, YYDS, 封神 |
-| 📦 **Homogenized** | Reposted/stolen content | 搬运, 抄袭, 素材来源 |
-
-### Features:
-
-- **Video Quality Scoring** - Titles are analyzed for quality signals
-- **Comment Filtering** - Toxic comments auto-collapsed
-- **Smart Hiding** - Choose to hide or just dim low-quality content
-- **Cross-Tab Sync** - Settings sync across all Bilibili tabs
-- **User Blocking** - Block users who consistently produce garbage
-- **Custom Keywords** - Add your own filter words
-- **Dark Mode** - Won't blind you at night
-- **ML-Ready** - Architecture prepared for future sentiment analysis
+它不是道德警察，也不是“我替你决定一切”的 AI 审判官。  
+它更像一个**可配置的内容筛子**：你自己决定筛多狠，筛什么，谁该被拉黑。
 
 ---
 
-## 🚀 Installation
+## 这玩意儿能帮你什么
 
-### Chrome / Edge (Chromium)
+### 1. 过滤低质量视频
 
-1. Download the latest release or clone this repo
-2. Open `chrome://extensions/`
-3. Enable **Developer Mode** (top right)
-4. Click **Load unpacked**
-5. Select the `bilibili-but-higher-iq` folder
+- 识别引战、标题党、同质化内容
+- 对可疑内容执行`隐藏`或`淡化`
+- 支持首页卡片和视频页推荐区
 
-### Firefox
+### 2. 过滤低质量评论
 
-1. Open `about:debugging#/runtime/this-firefox`
-2. Click **Load Temporary Add-on**
-3. Select `manifest.json` from the folder
+- 优先处理垃圾评论、拱火评论、低信息密度评论
+- 支持“仍然显示”，不搞一刀切
+- 可以直接从评论区一键屏蔽用户
 
-### Safari
+### 3. 给你控制权，而不是替你发号施令
 
-Coming soon™ (Manifest V3 Safari support is in progress)
-
----
-
-## 🎮 Usage
-
-1. Click the extension icon in your toolbar
-2. Toggle filters on/off
-3. Adjust which categories to filter
-4. For fine-grained control, click "Open Settings"
-
-### Quick Actions
-
-| Action | How |
-|--------|-----|
-| Show hidden comment | Click "Show anyway" button |
-| Block a user | Click the "Block User" button on their comment |
-| Adjust sensitivity | Settings > Filter Options |
+- 每类过滤都能单独开关
+- 支持用户黑名单
+- 支持自定义关键词
+- 支持数据导入 / 导出
+- 设置可通过 `chrome.storage.sync` 同步
 
 ---
 
-## 🏗️ Architecture
+## 现在修到哪了
 
+当前项目已经完成这些核心能力：
+
+- Manifest V3 扩展结构
+- Popup / Options 设置界面
+- 视频评分与评论过滤逻辑
+- 跨标签页设置同步
+- B 站新页面结构适配
+- **Shadow DOM 评论区/组件适配**
+
+如果你前几天看过这个仓库，最新一轮修复重点就是这里：  
+**B 站现在大量用了 Web Components + Shadow DOM。评论区和部分卡片不能再靠平面 DOM 的老 selector 硬抓。**  
+这轮已经补上了 Shadow DOM 穿透观察、评论数据提取、推荐卡片提取，以及对应的探针测试。
+
+---
+
+## 适合谁
+
+适合这些人：
+
+- 想把 B 站重新用回“信息工具”而不是“情绪老虎机”的人
+- 不想每次刷首页都被低幼内容糊脸的人
+- 希望评论区至少先过滤掉一层垃圾的用户
+- 对“平台默认推荐=我真正想看”这件事已经没耐心的人
+
+不适合这些人：
+
+- 觉得越吵越有意思
+- 觉得标题越炸裂越开心
+- 觉得“互联网本来就这样，忍忍吧”就行
+
+---
+
+## 安装
+
+### 开发者模式加载
+
+1. 克隆仓库
+2. 打开 Chrome / Edge 的 `chrome://extensions/`
+3. 开启右上角“开发者模式”
+4. 点击“加载已解压的扩展程序”
+5. 选择本项目目录
+
+---
+
+## 怎么用
+
+### 最快上手
+
+1. 装好扩展
+2. 打开 B 站
+3. 点扩展图标
+4. 打开“启用过滤”
+5. 先用默认设置刷一会儿
+6. 再根据你的容忍度决定是“淡化”还是“直接隐藏”
+
+### 如果你想更狠一点
+
+去 `Options` 页面：
+
+- 调整评论过滤模式
+- 增加自己的关键词
+- 管理黑名单
+- 导入/导出配置
+
+### 如果你在评论区看到典型脏东西
+
+1. 先点“仍然显示”确认内容
+2. 直接点“屏蔽用户”
+3. 这个用户后续内容会一起被过滤
+
+---
+
+## 项目结构
+
+```text
+├── manifest.json
+├── background/
+│   └── service-worker.js
+├── content/
+│   ├── dom-observer.js
+│   ├── video-scorer.js
+│   └── comment-filter.js
+├── storage/
+│   └── blocklist-manager.js
+├── styles/
+│   └── content.css
+├── ui/
+│   ├── popup/
+│   └── options/
+├── utils/
+│   ├── constants.js
+│   └── shadow-dom-utils.js
+├── tests/
+│   └── e2e/
+└── _locales/
 ```
-┌─────────────────────────────────────────────────────────────┐
-│                        EXTENSION                              │
-├─────────────────────────────────────────────────────────────┤
-│                                                              │
-│  ┌─────────────┐   ┌─────────────────┐   ┌───────────────┐  │
-│  │  UI Layer   │   │  Business Logic │   │  Data Layer   │  │
-│  ├─────────────┤   ├─────────────────┤   ├───────────────┤  │
-│  │ popup/      │   │ video-scorer.js │   │ blocklist-    │  │
-│  │ options/    │   │ comment-filter.js│   │ manager.js    │  │
-│  └─────────────┘   └────────┬────────┘   └───────────────┘  │
-│                             │                                │
-│                    ┌────────▼────────┐                      │
-│                    │  DOM Observer   │                      │
-│                    └─────────────────┘                        │
-└─────────────────────────────────────────────────────────────┘
+
+---
+
+## 本地开发
+
+```bash
+npm run build
 ```
 
+加载扩展后，常见调试入口：
+
+- 后台：扩展详情页 -> `Service Worker`
+- 内容脚本：页面 DevTools -> `Sources` -> `Content scripts`
+- Popup：右键扩展图标 -> `Inspect popup`
+
 ---
 
-## 📊 Scoring Algorithm
+## 测试
 
+### 本地 Shadow DOM 探针
+
+```bash
+npm --prefix tests run probe:shadowdom
 ```
-FinalScore = 100
-  - Σ(keyword_weight × matched_count × category_penalty)
-  - pattern_penalty
 
-Thresholds:
-  > 50  → Show normally
-  31-50 → Dim (reduce opacity)
-  ≤ 30  → Hide completely
+### 本地探针测试
+
+```bash
+npm --prefix tests run test:probe
 ```
 
----
+说明：
 
-## 🤝 Contributing
-
-This project follows a multi-agent collaboration protocol. See [AGENTS.md](.agentstalk/AGENTS.md) for details.
-
-Want to contribute? Found a bug? Have a feature request?
-
-1. Check existing issues
-2. Open a new issue (please include Bilibili URL if reporting a false positive/negative)
-3. Make a PR with tests
+- `shadow-dom-probe.mjs` 用来统计真实页面 / fixture 的 selector 命中情况
+- `shadow-dom-integration.test.mjs` 用来验证 extractor 能不能从 Shadow DOM 组件宿主上拿到视频/评论数据
 
 ---
 
-## 📝 License
+## 隐私说明
 
-MIT - Because sharing is caring, but so is not having your time wasted.
-
----
-
-## ⚠️ Disclaimer
-
-This extension is not affiliated with Bilibili. It's just a fan project for people who want to enjoy quality content without the algorithmic garbage.
-
-If Bilibili's algorithm is reading this: I understand you need engagement. But "第X个原因" as a title format died in 2019. Let it rest.
+- 数据默认存本地浏览器
+- 设置可经 `chrome.storage.sync` 同步
+- 不上传你的浏览行为
+- 不把内容数据发去第三方服务器
 
 ---
 
-<p align="center">
-  <sub>Made with 🧠 for people who remember when Bilibili was good</sub>
-</sub>
-</p>
+## 这项目的态度
+
+这个项目背后的想法其实很简单：
+
+> 平台可以越来越像“小孩桌”，但你的浏览器不一定非得陪着一起降级。
+
+如果一个地方还能讨论、还能学习、还能认真表达，  
+那它就值得一层最基本的“去噪工具”。
+
+---
+
+## 许可证
+
+MIT，见 [`LICENSE`](LICENSE)。

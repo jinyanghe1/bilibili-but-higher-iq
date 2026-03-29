@@ -1,16 +1,6 @@
 // Bilibili Quality Filter - Popup Script
 
-// Default settings
-const DEFAULT_SETTINGS = {
-  enabled: true,
-  filterRageBait: true,
-  filterClickbait: true,
-  filterHomogenized: true,
-  filterComments: true,
-  dimInsteadOfHide: false,
-  autoCollapseComments: true,
-  showBlockUserButton: true
-};
+import { DEFAULT_SETTINGS } from '../../utils/constants.js';
 
 // DOM Elements
 const elements = {
@@ -37,12 +27,12 @@ async function init() {
 }
 
 /**
- * Load settings from storage
+ * Load settings from background
  */
 async function loadSettings() {
   try {
-    const result = await chrome.storage.sync.get('settings');
-    const settings = { ...DEFAULT_SETTINGS, ...result.settings };
+    const response = await chrome.runtime.sendMessage({ type: 'GET_SETTINGS' });
+    const settings = { ...DEFAULT_SETTINGS, ...(response?.settings || {}) };
 
     // Update UI
     elements.enabled.checked = settings.enabled;
@@ -92,13 +82,14 @@ async function saveSettings() {
   };
 
   try {
-    await chrome.storage.sync.set({ settings });
-
-    // Notify background script
-    await chrome.runtime.sendMessage({
+    const response = await chrome.runtime.sendMessage({
       type: 'UPDATE_SETTINGS',
       settings
     });
+
+    if (!response?.success) {
+      throw new Error(response?.error || 'Failed to update settings');
+    }
 
     // Update body class
     document.body.classList.toggle('disabled', !settings.enabled);
@@ -113,7 +104,7 @@ async function saveSettings() {
 function setupEventListeners() {
   // Settings changes
   Object.values(elements).forEach(el => {
-    if (el && el.type === 'checkbox') {
+    if (el && el.type === 'checkbox' && el !== elements.enabled) {
       el.addEventListener('change', saveSettings);
     }
   });

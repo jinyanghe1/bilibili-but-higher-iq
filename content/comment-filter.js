@@ -3,9 +3,33 @@
 import { blocklistManager } from '../storage/blocklist-manager.js';
 import {
   COMMENT_PATTERNS,
-  COMMENT_THRESHOLDS,
-  BILIBILI_SELECTORS
+  BILIBILI_SELECTORS,
+  COMMENT_FILTER_MODES,
+  BLOCKLIST_INTENSITY,
+  INTENSITY_THRESHOLDS,
+  ALLOWLIST_KEYWORDS
 } from '../utils/constants.js';
+import {
+  deepQuerySelector,
+  getTextContent
+} from '../utils/shadow-dom-utils.js';
+
+import { analyzeSentiment } from '../ml/sentiment-analyzer.js';
+
+const UID_PATTERN = /space\.bilibili\.com\/(\d+)/i;
+
+function normalizeText(value) {
+  return (value || '').replace(/\s+/g, ' ').trim();
+}
+
+function extractUidFromValue(value) {
+  if (!value) {
+    return null;
+  }
+
+  const match = String(value).match(UID_PATTERN);
+  return match ? match[1] : null;
+}
 
 class CommentFilter {
   constructor() {
@@ -61,6 +85,21 @@ class CommentFilter {
       return { score: 100, reasons: [], action: 'show' };
     }
 
+    const mode = this.settings.commentFilterMode || COMMENT_FILTER_MODES.BLOCKLIST;
+
+    // Allowlist mode
+    if (mode === COMMENT_FILTER_MODES.ALLOWLIST) {
+      return this.scoreCommentAllowlist(commentData);
+    }
+
+    // Blocklist mode (default)
+    return this.scoreCommentBlocklist(commentData);
+  }
+
+  /**
+   * Score comment in blocklist mode (hide low-quality)
+   */
+  async scoreCommentBlocklist(commentData) {
     let score = 100;
     const reasons = [];
 
@@ -75,8 +114,17 @@ class CommentFilter {
 
     const content = commentData.content || '';
 
-    // Layer 2: Keyword matching
-    if (content) {
+    // Layer 2: ML Sentiment analysis (if enabled)
+    if (this.settings.enableMLSentiment && content) {
+      const mlResult = await analyzeSentiment(content);
+      if (!mlResult.fallback) {
+        score = mlResult.score;
+        reasons.push(`ML: ${mlResult.score}`);
+      }
+    }
+
+    // Layer 3: Keyword matching (only if ML didn't run or for additional context)
+    if (content && !this.settings.enableMLSentiment) {
       const contentLower = content.toLowerCase();
 
       if (this.keywords.rageBait) {
@@ -94,21 +142,79 @@ class CommentFilter {
           reasons.push(`Clickbait: ${clickResult.matched}`);
         }
       }
-    }
 
-    // Layer 3: Pattern analysis
-    const patternResult = this.analyzeCommentPatterns(content);
-    score -= patternResult.penalty;
-    reasons.push(...patternResult.reasons);
+      // Layer 4: Pattern analysis
+      const patternResult = this.analyzeCommentPatterns(content);
+      score -= patternResult.penalty;
+      reasons.push(...patternResult.reasons);
+    }
 
     // Ensure score within bounds
     score = Math.max(0, Math.min(100, score));
 
-    // Determine action
-    const action = score <= COMMENT_THRESHOLDS.HIDE ? 'hide' :
-                   score <= COMMENT_THRESHOLDS.WARNING ? 'warn' : 'show';
+    // Determine action based on intensity
+    const intensity = this.settings.blocklistIntensity || BLOCKLIST_INTENSITY.MILD;
+    const thresholds = INTENSITY_THRESHOLDS[intensity] || INTENSITY_THRESHOLDS.mild;
+
+    const action = score <= thresholds.hide ? 'hide' :
+                   score <= thresholds.warning ? 'warn' : 'show';
 
     return { score, reasons, action };
+  }
+
+  /**
+   * Score comment in allowlist mode (only show high-quality)
+   */
+  scoreCommentAllowlist(commentData) {
+    const reasons = [];
+
+    // Layer 1: User blocklist check
+    if (commentData.uid && this.blockedUIDs.has(String(commentData.uid))) {
+      return {
+        score: 0,
+        reasons: ['User is blocked'],
+        action: 'hide'
+      };
+    }
+
+    const content = commentData.content || '';
+    const contentLower = content.toLowerCase();
+
+    // Check for allowlist keywords
+    const allowlistMatches = ALLOWLIST_KEYWORDS.filter(kw =>
+      contentLower.includes(kw.toLowerCase())
+    );
+
+    if (allowlistMatches.length > 0) {
+      reasons.push(`Quality keywords: ${allowlistMatches.length}`);
+      return {
+        score: 80 + Math.min(allowlistMatches.length * 5, 20),
+        reasons,
+        action: 'show'
+      };
+    }
+
+    // Check for negative patterns that indicate low quality
+    const patternResult = this.analyzeCommentPatterns(content);
+    const hasNegativePatterns = patternResult.penalty > 0 ||
+      this.keywords.rageBait?.some(kw => contentLower.includes(kw.keyword.toLowerCase())) ||
+      this.keywords.clickbait?.some(kw => contentLower.includes(kw.keyword.toLowerCase()));
+
+    if (hasNegativePatterns) {
+      reasons.push(...patternResult.reasons);
+      return {
+        score: 20,
+        reasons,
+        action: 'hide'
+      };
+    }
+
+    // No strong quality indicators, dim it
+    return {
+      score: 40,
+      reasons: ['No quality indicators'],
+      action: 'warn'
+    };
   }
 
   checkKeywords(text, keywords) {
@@ -137,25 +243,25 @@ class CommentFilter {
     const reasons = [];
 
     // Check for link spam
-    if (COMMENT_PATTERNS.LINK_SPAM.test(content)) {
+    if (content.match(COMMENT_PATTERNS.LINK_SPAM)) {
       penalty += 30;
       reasons.push('Link spam');
     }
 
     // Check for punctuation spam
-    if (COMMENT_PATTERNS.PUNCTUATION_SPAM.test(content)) {
+    if (content.match(COMMENT_PATTERNS.PUNCTUATION_SPAM)) {
       penalty += 15;
       reasons.push('Excessive punctuation');
     }
 
     // Check for ALL CAPS spam (English rage)
-    if (COMMENT_PATTERNS.CAPS_SPAM.test(content)) {
+    if (content.match(COMMENT_PATTERNS.CAPS_SPAM)) {
       penalty += 20;
       reasons.push('CAPS spam');
     }
 
     // Check for repeated characters
-    if (COMMENT_PATTERNS.REPEATED_CHARS.test(content)) {
+    if (content.match(COMMENT_PATTERNS.REPEATED_CHARS)) {
       penalty += 15;
       reasons.push('Repeated characters');
     }
@@ -189,39 +295,150 @@ class CommentFilter {
     };
 
     try {
-      // Get content
-      const contentEl = commentEl.querySelector(
-        '.comment-content, .text, .content, [data-text]'
-      );
-      if (contentEl) {
-        data.content = contentEl.textContent?.trim() || '';
+      const payload = this.getCommentDataPayload(commentEl);
+      if (payload) {
+        data.content = normalizeText(
+          payload.content?.message ||
+          payload.content?.text ||
+          payload.message
+        );
+        data.uid = payload.mid_str ||
+          payload.mid ||
+          payload.member?.mid_str ||
+          payload.member?.mid ||
+          payload.user?.mid ||
+          payload.user?.uid ||
+          null;
+        data.username = normalizeText(
+          payload.member?.uname ||
+          payload.member?.name ||
+          payload.user?.uname ||
+          payload.user?.name
+        );
+        data.rid = payload.rpid_str ||
+          payload.rpid ||
+          payload.reply_id ||
+          payload.id ||
+          null;
       }
 
-      // Get user info
-      const userEl = commentEl.querySelector(
-        '.user-name, .author-name, [data-user-id], .name'
-      );
+      const contentEl = this.getCommentTextElement(commentEl);
+      if (!data.content && contentEl) {
+        data.content = normalizeText(getTextContent(contentEl));
+      }
+
+      const userEl = this.getCommentAuthorElement(commentEl);
       if (userEl) {
-        data.username = userEl.textContent?.trim() || '';
-        const uidAttr = userEl.getAttribute('data-user-id') ||
-                        userEl.getAttribute('data-uid');
-        if (uidAttr) {
-          data.uid = uidAttr;
+        if (!data.username) {
+          data.username = normalizeText(getTextContent(userEl));
+        }
+
+        if (!data.uid) {
+          data.uid = this.extractUidFromAuthorElement(userEl);
         }
       }
-
-      // Get reply ID
-      const ridAttr = commentEl.getAttribute('data-rid') ||
-                      commentEl.getAttribute('data-id');
-      if (ridAttr) {
-        data.rid = ridAttr;
-      }
-
     } catch (error) {
       console.error('[BQF] Error extracting comment data:', error);
     }
 
+    if (!data.rid) {
+      const renderer = this.getCommentRenderer(commentEl);
+      data.rid = commentEl.getAttribute('data-rid') ||
+        commentEl.getAttribute('data-id') ||
+        renderer?.getAttribute('data-rid') ||
+        renderer?.getAttribute('data-id') ||
+        null;
+    }
+
+    data.content = normalizeText(data.content);
+    data.username = normalizeText(data.username);
+    data.uid = data.uid != null && data.uid !== '' ? String(data.uid) : null;
+    data.rid = data.rid != null && data.rid !== '' ? String(data.rid) : null;
+
     return data;
+  }
+
+  getCommentRenderer(commentEl) {
+    if (!(commentEl instanceof Element)) {
+      return null;
+    }
+
+    if (
+      commentEl.matches(BILIBILI_SELECTORS.COMMENT_RENDERER) ||
+      commentEl.matches(BILIBILI_SELECTORS.COMMENT_ITEM)
+    ) {
+      return commentEl;
+    }
+
+    return deepQuerySelector(BILIBILI_SELECTORS.COMMENT_RENDERER, commentEl);
+  }
+
+  getCommentRendererRoot(commentEl) {
+    return this.getCommentRenderer(commentEl)?.shadowRoot || null;
+  }
+
+  getCommentDataPayload(commentEl) {
+    const renderer = this.getCommentRenderer(commentEl);
+    return renderer?.__data || commentEl?.__data || null;
+  }
+
+  getCommentContentContainer(commentEl) {
+    const rendererRoot = this.getCommentRendererRoot(commentEl);
+    const searchRoot = rendererRoot || this.getCommentRenderer(commentEl) || commentEl;
+
+    return deepQuerySelector('#content', searchRoot) ||
+      deepQuerySelector(BILIBILI_SELECTORS.COMMENT_CONTENT, searchRoot) ||
+      null;
+  }
+
+  getCommentTextElement(commentEl) {
+    const rendererRoot = this.getCommentRendererRoot(commentEl);
+    const searchRoot = rendererRoot || this.getCommentRenderer(commentEl) || commentEl;
+    const richText = deepQuerySelector(BILIBILI_SELECTORS.COMMENT_RICH_TEXT, searchRoot);
+
+    return deepQuerySelector('#contents', richText || searchRoot) ||
+      deepQuerySelector(BILIBILI_SELECTORS.COMMENT_CONTENT, richText || searchRoot) ||
+      null;
+  }
+
+  getCommentAuthorElement(commentEl) {
+    const rendererRoot = this.getCommentRendererRoot(commentEl);
+    const searchRoot = rendererRoot || this.getCommentRenderer(commentEl) || commentEl;
+    const userInfo = deepQuerySelector(BILIBILI_SELECTORS.COMMENT_USER_INFO, searchRoot);
+
+    return deepQuerySelector('#user-name a', userInfo || searchRoot) ||
+      deepQuerySelector('#user-name', userInfo || searchRoot) ||
+      deepQuerySelector(BILIBILI_SELECTORS.COMMENT_AUTHOR, userInfo || searchRoot) ||
+      null;
+  }
+
+  getCommentFooterElement(commentEl) {
+    const rendererRoot = this.getCommentRendererRoot(commentEl);
+    const searchRoot = rendererRoot || this.getCommentRenderer(commentEl) || commentEl;
+    return deepQuerySelector(BILIBILI_SELECTORS.COMMENT_FOOTER, searchRoot) ||
+      null;
+  }
+
+  extractUidFromAuthorElement(authorEl) {
+    if (!authorEl) {
+      return null;
+    }
+
+    const directUid = authorEl.getAttribute('data-user-profile-id') ||
+      authorEl.getAttribute('data-user-id') ||
+      authorEl.getAttribute('data-uid');
+    if (directUid) {
+      return String(directUid);
+    }
+
+    const authorLink = authorEl.matches('a')
+      ? authorEl
+      : deepQuerySelector('a[href*="space.bilibili.com/"]', authorEl);
+    return extractUidFromValue(
+      authorLink?.getAttribute?.('href') ||
+      authorLink?.href ||
+      authorEl.getAttribute('href')
+    );
   }
 
   /**
@@ -261,19 +478,25 @@ class CommentFilter {
     commentEl.classList.remove('bqf-comment-hidden');
     commentEl.classList.add('bqf-comment-shown');
 
-    // Remove the "show anyway" button if present
-    const btn = commentEl.querySelector('.bqf-show-anyway-btn');
-    if (btn) {
+    const rendererRoot = this.getCommentRendererRoot(commentEl);
+    (rendererRoot || commentEl).querySelectorAll('.bqf-show-anyway-btn').forEach((btn) => {
       btn.remove();
-    }
+    });
   }
 
   /**
    * Add "Block User" button to a comment
    */
   addBlockUserButton(commentEl) {
-    const existingBtn = commentEl.querySelector('.bqf-block-user-btn');
+    const rendererRoot = this.getCommentRendererRoot(commentEl);
+    const existingBtn = (rendererRoot || commentEl).querySelector('.bqf-block-user-btn');
     if (existingBtn) return;
+
+    const footerEl = this.getCommentFooterElement(commentEl);
+    if (!footerEl) return;
+
+    const commentData = this.extractCommentData(commentEl);
+    if (!commentData.uid) return;
 
     const btn = document.createElement('button');
     btn.className = 'bqf-block-user-btn';
@@ -289,14 +512,13 @@ class CommentFilter {
       margin-left: 8px;
     `;
 
-    const userEl = commentEl.querySelector('[data-user-id], .user-name');
-    const uid = userEl?.getAttribute('data-user-id');
-    const username = userEl?.textContent?.trim() || 'Unknown';
+    const uid = commentData.uid;
+    const username = commentData.username || 'Unknown';
 
     btn.addEventListener('click', async () => {
       if (confirm(`Block user "${username}"?`)) {
         await blocklistManager.blockUser(uid, username);
-        this.refreshData();
+        await this.refreshData();
         // Notify background to sync across tabs
         chrome.runtime.sendMessage({
           type: 'USER_BLOCKED',
@@ -306,7 +528,7 @@ class CommentFilter {
       }
     });
 
-    commentEl.querySelector('.comment-actions, .action-list')?.appendChild(btn);
+    footerEl.appendChild(btn);
   }
 
   /**

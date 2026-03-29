@@ -1,16 +1,6 @@
 // Bilibili Quality Filter - Options Page Script
 
-// Default settings
-const DEFAULT_SETTINGS = {
-  enabled: true,
-  filterRageBait: true,
-  filterClickbait: true,
-  filterHomogenized: true,
-  filterComments: true,
-  dimInsteadOfHide: false,
-  autoCollapseComments: true,
-  showBlockUserButton: true
-};
+import { DEFAULT_SETTINGS } from '../../utils/constants.js';
 
 // DOM Elements
 const elements = {
@@ -24,6 +14,16 @@ const elements = {
   filterClickbait: document.getElementById('filterClickbait'),
   filterHomogenized: document.getElementById('filterHomogenized'),
   filterComments: document.getElementById('filterComments'),
+  // Comment filter mode
+  modeBlocklist: document.getElementById('modeBlocklist'),
+  modeAllowlist: document.getElementById('modeAllowlist'),
+  // Blocklist intensity
+  intensitySetting: document.getElementById('intensitySetting'),
+  intensitySimple: document.getElementById('intensitySimple'),
+  intensityMild: document.getElementById('intensityMild'),
+  intensityRadical: document.getElementById('intensityRadical'),
+  // ML
+  enableMLSentiment: document.getElementById('enableMLSentiment'),
   // Keywords
   newKeyword: document.getElementById('newKeyword'),
   keywordCategory: document.getElementById('keywordCategory'),
@@ -88,12 +88,40 @@ function updateSettingsUI(settings) {
   if (elements.filterClickbait) elements.filterClickbait.checked = settings.filterClickbait;
   if (elements.filterHomogenized) elements.filterHomogenized.checked = settings.filterHomogenized;
   if (elements.filterComments) elements.filterComments.checked = settings.filterComments;
+
+  // Comment filter mode
+  const mode = settings.commentFilterMode || 'blocklist';
+  if (elements.modeBlocklist) elements.modeBlocklist.checked = mode === 'blocklist';
+  if (elements.modeAllowlist) elements.modeAllowlist.checked = mode === 'allowlist';
+  updateIntensityVisibility(mode);
+
+  // Blocklist intensity
+  const intensity = settings.blocklistIntensity || 'mild';
+  if (elements.intensitySimple) elements.intensitySimple.checked = intensity === 'simple';
+  if (elements.intensityMild) elements.intensityMild.checked = intensity === 'mild';
+  if (elements.intensityRadical) elements.intensityRadical.checked = intensity === 'radical';
+
+  // ML sentiment
+  if (elements.enableMLSentiment) elements.enableMLSentiment.checked = settings.enableMLSentiment;
+}
+
+/**
+ * Update intensity selector visibility based on mode
+ */
+function updateIntensityVisibility(mode) {
+  if (elements.intensitySetting) {
+    elements.intensitySetting.style.display = mode === 'blocklist' ? 'block' : 'none';
+  }
 }
 
 /**
  * Save settings to storage
  */
 async function saveSettings() {
+  const commentFilterMode = elements.modeBlocklist?.checked ? 'blocklist' : 'allowlist';
+  const blocklistIntensity = elements.intensitySimple?.checked ? 'simple' :
+                             elements.intensityRadical?.checked ? 'radical' : 'mild';
+
   const settings = {
     enabled: elements.enabled?.checked ?? true,
     filterRageBait: elements.filterRageBait?.checked ?? true,
@@ -102,7 +130,10 @@ async function saveSettings() {
     filterComments: elements.filterComments?.checked ?? true,
     dimInsteadOfHide: elements.dimInsteadOfHide?.checked ?? false,
     autoCollapseComments: elements.autoCollapseComments?.checked ?? true,
-    showBlockUserButton: elements.showBlockUserButton?.checked ?? true
+    showBlockUserButton: elements.showBlockUserButton?.checked ?? true,
+    commentFilterMode,
+    blocklistIntensity,
+    enableMLSentiment: elements.enableMLSentiment?.checked ?? false
   };
 
   try {
@@ -388,10 +419,36 @@ function setupEventListeners() {
     elements.filterRageBait,
     elements.filterClickbait,
     elements.filterHomogenized,
-    elements.filterComments
+    elements.filterComments,
+    elements.enableMLSentiment
   ];
 
   settingsInputs.forEach(input => {
+    if (input) {
+      input.addEventListener('change', saveSettings);
+    }
+  });
+
+  // Comment filter mode changes
+  if (elements.modeBlocklist) {
+    elements.modeBlocklist.addEventListener('change', () => {
+      if (elements.modeBlocklist.checked) {
+        updateIntensityVisibility('blocklist');
+        saveSettings();
+      }
+    });
+  }
+  if (elements.modeAllowlist) {
+    elements.modeAllowlist.addEventListener('change', () => {
+      if (elements.modeAllowlist.checked) {
+        updateIntensityVisibility('allowlist');
+        saveSettings();
+      }
+    });
+  }
+
+  // Blocklist intensity changes
+  [elements.intensitySimple, elements.intensityMild, elements.intensityRadical].forEach(input => {
     if (input) {
       input.addEventListener('change', saveSettings);
     }

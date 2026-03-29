@@ -127,6 +127,72 @@
           <p class="setting-desc" data-i18n="filterCommentsDesc">
             Filter low-quality comments based on content patterns
           </p>
+
+          <!-- Comment Filter Mode -->
+          <div class="sub-setting">
+            <label class="label" data-i18n="filterMode">Filter Mode</label>
+            <div class="radio-group">
+              <label class="radio-item">
+                <input type="radio" name="commentFilterMode" value="blocklist" id="modeBlocklist">
+                <span class="radio-mark"></span>
+                <span class="label">
+                  <span data-i18n="blocklistMode">Blocklist</span>
+                  <small data-i18n="blocklistModeDesc">Hide low-quality comments</small>
+                </span>
+              </label>
+              <label class="radio-item">
+                <input type="radio" name="commentFilterMode" value="allowlist" id="modeAllowlist">
+                <span class="radio-mark"></span>
+                <span class="label">
+                  <span data-i18n="allowlistMode">Allowlist</span>
+                  <small data-i18n="allowlistModeDesc">Only show high-quality comments</small>
+                </span>
+              </label>
+            </div>
+          </div>
+
+          <!-- Blocklist Intensity (shown when blocklist mode is selected) -->
+          <div class="sub-setting" id="intensitySetting">
+            <label class="label" data-i18n="filterIntensity">Filter Intensity</label>
+            <div class="radio-group">
+              <label class="radio-item">
+                <input type="radio" name="blocklistIntensity" value="simple" id="intensitySimple">
+                <span class="radio-mark"></span>
+                <span class="label">
+                  <span data-i18n="simpleIntensity">Simple</span>
+                  <small data-i18n="simpleIntensityDesc">Light filtering</small>
+                </span>
+              </label>
+              <label class="radio-item">
+                <input type="radio" name="blocklistIntensity" value="mild" id="intensityMild">
+                <span class="radio-mark"></span>
+                <span class="label">
+                  <span data-i18n="mildIntensity">Mild</span>
+                  <small data-i18n="mildIntensityDesc">Moderate filtering</small>
+                </span>
+              </label>
+              <label class="radio-item">
+                <input type="radio" name="blocklistIntensity" value="radical" id="intensityRadical">
+                <span class="radio-mark"></span>
+                <span class="label">
+                  <span data-i18n="radicalIntensity">Radical</span>
+                  <small data-i18n="radicalIntensityDesc">Aggressive filtering</small>
+                </span>
+              </label>
+            </div>
+          </div>
+
+          <!-- ML Sentiment Analysis -->
+          <div class="sub-setting">
+            <label class="checkbox-item">
+              <input type="checkbox" id="enableMLSentiment">
+              <span class="checkmark"></span>
+              <span class="label">
+                <span data-i18n="enableML">Enable ML Sentiment Analysis</span>
+                <small data-i18n="enableMLDesc">Use lightweight ML for better accuracy (may slow down first load)</small>
+              </span>
+            </label>
+          </div>
         </div>
       </section>
 

@@ -50,11 +50,45 @@ export const SCORE_THRESHOLDS = {
   HIDE: 30  // Content <= 30 gets hidden
 };
 
-// Comment score thresholds
+// Comment filter modes
+export const COMMENT_FILTER_MODES = {
+  BLOCKLIST: 'blocklist',  // Hide low-quality comments
+  ALLOWLIST: 'allowlist'  // Only show high-quality comments
+};
+
+// Blocklist intensity levels
+export const BLOCKLIST_INTENSITY = {
+  SIMPLE: 'simple',   // Light filtering
+  MILD: 'mild',       // Moderate filtering
+  RADICAL: 'radical'  // Aggressive filtering
+};
+
+// Intensity thresholds [warning, hide]
+export const INTENSITY_THRESHOLDS = {
+  simple: { warning: 30, hide: 20 },
+  mild: { warning: 45, hide: 35 },
+  radical: { warning: 60, hide: 50 }
+};
+
+// Allowlist keywords (high-quality comment indicators)
+export const ALLOWLIST_KEYWORDS = [
+  '分析', '理性', '客观', '专业', '深度',
+  '见解', '论证', '观点', '论述', '逻辑',
+  '数据', '事实', '依据', '参考', '来源',
+  '科普', '讲解', '解析', '测评', '对比'
+];
+
+// Comment score thresholds (legacy, used for video filtering)
 export const COMMENT_THRESHOLDS = {
   NORMAL: 50,
-  WARNING: 36,
-  HIDE: 35
+  WARNING: 35,  // Fixed bug: was 36, should be 35
+  HIDE: 30
+};
+
+// ML configuration
+export const ML_CONFIG = {
+  DEFAULT_TIMEOUT: 100,  // milliseconds
+  MODEL_NAME: 'Xenova/transformers-small'  // Lightweight sentiment model
 };
 
 // Video title patterns that indicate low quality
@@ -62,7 +96,7 @@ export const TITLE_PATTERNS = {
   // Excessive punctuation
   EXCESSIVE_PUNCTUATION: /[!?。！？]{3,}/g,
   // All caps or full-width caps
-  CAPS_RATIO: /[A-Z\u4E00-\u9FFF]/g,
+  CAPS_RATIO: /[A-ZＡ-Ｚ]/g,
   // Emoji spam
   EMOJI_SPAM: /[\u{1F300}-\u{1F9FF}]{3,}/gu,
   // Numbers in title (clickbait pattern like "第X个")
@@ -88,14 +122,20 @@ export const COMMENT_PATTERNS = {
 // DOM selectors for Bilibili
 export const BILIBILI_SELECTORS = {
   // Video cards in feed
-  VIDEO_CARD: '.bili-video-card, .video-card, [data-video-id]',
-  VIDEO_CARD_TITLE: '.bili-video-card__title, .video-card__title, .title',
-  VIDEO_CARD_AUTHOR: '.bili-video-card__info--author, .video-card__author',
+  VIDEO_CARD: '.bili-video-card, .bili-feed-card, .feed-card, .floor-single-card, .floor-card, .single-card, .video-page-card-small, .video-pod__item, .card-box, [data-video-id], [data-key^="BV"]',
+  VIDEO_CARD_TITLE: '.bili-video-card__title, .bili-video-card__info--tit, .video-card__title, .video-title, .title-txt, .title, .entry-title, h3 a, h3',
+  VIDEO_CARD_AUTHOR: '.bili-video-card__info--author, .bili-video-card__info--owner, .video-card__author, .author, .up-name, a[href*="//space.bilibili.com/"]',
+  VIDEO_CARD_LINK: 'a[href*="/video/BV"], a[href^="https://www.bilibili.com/video/BV"], a[href^="//www.bilibili.com/video/BV"]',
   // Comment section
-  COMMENT_LIST: '.comment-list, #comment, .comment',
-  COMMENT_ITEM: '.comment-item, .list-item',
-  COMMENT_AUTHOR: '.user-name, .author-name, [data-user-id]',
-  COMMENT_CONTENT: '.comment-content, .text, .content',
+  COMMENT_HOST: 'bili-comments',
+  COMMENT_LIST: '.comment-list, #comment, .comment, #feed, #contents',
+  COMMENT_ITEM: '.comment-item, .list-item, bili-comment-thread-renderer, bili-comment-reply-renderer',
+  COMMENT_RENDERER: 'bili-comment-renderer, bili-comment-reply-renderer',
+  COMMENT_USER_INFO: 'bili-comment-user-info',
+  COMMENT_RICH_TEXT: 'bili-rich-text',
+  COMMENT_AUTHOR: '.user-name, .author-name, [data-user-id], .name, #user-name, #user-name a, [data-user-profile-id]',
+  COMMENT_CONTENT: '.comment-content, .text, .content, [data-text], #content, #contents, bili-rich-text',
+  COMMENT_FOOTER: '.comment-actions, .action-list, #footer',
   // Main content area
   MAIN_CONTENT: '#bili-main, #app, main, [role="main"]'
 };
@@ -117,5 +157,11 @@ export const DEFAULT_SETTINGS = {
   filterComments: true,
   dimInsteadOfHide: false,
   autoCollapseComments: true,
-  showBlockUserButton: true
+  showBlockUserButton: true,
+  // Comment filter mode
+  commentFilterMode: 'blocklist',
+  // Blocklist intensity
+  blocklistIntensity: 'mild',
+  // ML sentiment analysis
+  enableMLSentiment: false
 };

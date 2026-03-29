@@ -30,6 +30,7 @@ class DOMObserver {
     this.processingVideos = new WeakSet();
     this.processingComments = new WeakSet();
     this.styleSnapshots = new WeakMap();
+    this.observedRoots = new WeakSet();
 
     this.pendingVideos = new Set();
     this.pendingComments = new Set();
@@ -229,6 +230,11 @@ class DOMObserver {
       window.clearTimeout(this.processTimer);
       this.processTimer = null;
     }
+
+    if (this.rescanTimer) {
+      window.clearTimeout(this.rescanTimer);
+      this.rescanTimer = null;
+    }
   }
 
   /**
@@ -251,8 +257,8 @@ class DOMObserver {
   startObserving() {
     if (this.isObserving) return;
 
-    const targetNode = document.body || document.documentElement;
-    if (!targetNode) {
+    const targetRoot = document.body || document.documentElement;
+    if (!targetRoot) {
       console.error('[BQF] Unable to start DOM observer: document body not available');
       return;
     }
@@ -265,13 +271,58 @@ class DOMObserver {
       }
     });
 
-    this.observer.observe(targetNode, {
-      childList: true,
-      subtree: true,
-      characterData: true
-    });
+    this.observeRoot(targetRoot);
+    this.observeDiscoveredShadowRoots(document.documentElement || targetRoot);
 
     this.isObserving = true;
+  }
+
+  observeRoot(root) {
+    if (!this.observer || !root || this.observedRoots.has(root)) {
+      return;
+    }
+
+    try {
+      this.observer.observe(root, {
+        childList: true,
+        subtree: true,
+        characterData: true
+      });
+      this.observedRoots.add(root);
+    } catch (error) {
+      console.debug('[BQF] Skipped unsupported observer root:', error);
+    }
+  }
+
+  observeDiscoveredShadowRoots(rootLike) {
+    if (!rootLike) {
+      return;
+    }
+
+    if (rootLike instanceof Document) {
+      this.observeDiscoveredShadowRoots(rootLike.documentElement);
+      return;
+    }
+
+    if (rootLike instanceof Element && rootLike.shadowRoot) {
+      this.observeRoot(rootLike.shadowRoot);
+      this.observeDiscoveredShadowRoots(rootLike.shadowRoot);
+    }
+
+    if (rootLike instanceof ShadowRoot) {
+      this.observeRoot(rootLike);
+    }
+
+    if (!rootLike.querySelectorAll) {
+      return;
+    }
+
+    rootLike.querySelectorAll('*').forEach((element) => {
+      if (element.shadowRoot) {
+        this.observeRoot(element.shadowRoot);
+        this.observeDiscoveredShadowRoots(element.shadowRoot);
+      }
+    });
   }
 
   /**
@@ -283,6 +334,7 @@ class DOMObserver {
       this.observer = null;
     }
 
+    this.observedRoots = new WeakSet();
     this.isObserving = false;
   }
 
@@ -311,6 +363,41 @@ class DOMObserver {
     this.schedulePendingProcessing();
   }
 
+  collectMatchingDescendants(rootLike, selector, bucket) {
+    if (!rootLike || !bucket) {
+      return;
+    }
+
+    if (rootLike instanceof Document) {
+      this.collectMatchingDescendants(rootLike.documentElement, selector, bucket);
+      return;
+    }
+
+    if (rootLike instanceof Element && rootLike.matches(selector)) {
+      bucket.add(rootLike);
+    }
+
+    if (rootLike instanceof Element && rootLike.shadowRoot) {
+      this.observeRoot(rootLike.shadowRoot);
+      this.collectMatchingDescendants(rootLike.shadowRoot, selector, bucket);
+    }
+
+    if (!rootLike.querySelectorAll) {
+      return;
+    }
+
+    rootLike.querySelectorAll(selector).forEach((element) => {
+      bucket.add(element);
+    });
+
+    rootLike.querySelectorAll('*').forEach((element) => {
+      if (element.shadowRoot) {
+        this.observeRoot(element.shadowRoot);
+        this.collectMatchingDescendants(element.shadowRoot, selector, bucket);
+      }
+    });
+  }
+
   /**
    * Collect candidate cards/comments from a node
    */
@@ -327,11 +414,25 @@ class DOMObserver {
       return;
     }
 
+    if (node instanceof Document) {
+      this.collectCandidates(node.documentElement);
+      return;
+    }
+
+    if (node instanceof ShadowRoot) {
+      this.observeRoot(node);
+      this.observeDiscoveredShadowRoots(node);
+      this.collectMatchingDescendants(node, BILIBILI_SELECTORS.VIDEO_CARD, this.pendingVideos);
+      this.collectMatchingDescendants(node, BILIBILI_SELECTORS.COMMENT_ITEM, this.pendingComments);
+      return;
+    }
+
     if (node.nodeType !== Node.ELEMENT_NODE) {
       return;
     }
 
     const element = /** @type {Element} */ (node);
+    this.observeDiscoveredShadowRoots(element);
 
     const videoCard = element.matches?.(BILIBILI_SELECTORS.VIDEO_CARD)
       ? element
@@ -347,28 +448,17 @@ class DOMObserver {
       this.pendingComments.add(commentItem);
     }
 
-    element.querySelectorAll?.(BILIBILI_SELECTORS.VIDEO_CARD).forEach((card) => {
-      this.pendingVideos.add(card);
-    });
-
-    element.querySelectorAll?.(BILIBILI_SELECTORS.COMMENT_ITEM).forEach((commentEl) => {
-      this.pendingComments.add(commentEl);
-    });
+    this.collectMatchingDescendants(element, BILIBILI_SELECTORS.VIDEO_CARD, this.pendingVideos);
+    this.collectMatchingDescendants(element, BILIBILI_SELECTORS.COMMENT_ITEM, this.pendingComments);
   }
 
   /**
    * Process existing elements on the page
    */
   processExistingElements() {
-    const root = document.querySelector(BILIBILI_SELECTORS.MAIN_CONTENT) || document;
-
-    root.querySelectorAll(BILIBILI_SELECTORS.VIDEO_CARD).forEach((card) => {
-      this.pendingVideos.add(card);
-    });
-
-    document.querySelectorAll(BILIBILI_SELECTORS.COMMENT_ITEM).forEach((commentEl) => {
-      this.pendingComments.add(commentEl);
-    });
+    this.observeDiscoveredShadowRoots(document);
+    this.collectMatchingDescendants(document, BILIBILI_SELECTORS.VIDEO_CARD, this.pendingVideos);
+    this.collectMatchingDescendants(document, BILIBILI_SELECTORS.COMMENT_ITEM, this.pendingComments);
 
     this.schedulePendingProcessing(0);
   }
@@ -470,6 +560,7 @@ class DOMObserver {
   resetVideoCard(card) {
     card.classList.remove('bqf-video-hidden', 'bqf-video-dimmed');
     this.restoreInlineStyle(card);
+    card.removeAttribute('data-bqf-hidden-reason');
     card.querySelectorAll('.bqf-video-badge').forEach((badge) => {
       badge.remove();
     });
@@ -585,9 +676,6 @@ class DOMObserver {
    */
   resetComment(commentEl) {
     this.restoreCommentVisibility(commentEl);
-    commentEl.querySelectorAll('.bqf-block-user-btn').forEach((button) => {
-      button.remove();
-    });
     commentEl.classList.remove('bqf-comment-shown');
   }
 
@@ -595,7 +683,8 @@ class DOMObserver {
    * Hide a comment body but leave a visible explanation and show button
    */
   hideComment(commentEl, result) {
-    const contentEl = commentEl.querySelector(BILIBILI_SELECTORS.COMMENT_CONTENT);
+    const contentEl = commentFilter.getCommentContentContainer(commentEl);
+    const rendererRoot = commentFilter.getCommentRendererRoot(commentEl);
 
     this.snapshotInlineStyle(commentEl);
     this.snapshotInlineStyle(contentEl);
@@ -642,6 +731,8 @@ class DOMObserver {
 
     if (contentEl?.parentNode) {
       contentEl.insertAdjacentElement('afterend', tools);
+    } else if (rendererRoot) {
+      rendererRoot.appendChild(tools);
     } else {
       commentEl.appendChild(tools);
     }
@@ -679,7 +770,7 @@ class DOMObserver {
       'vertical-align: middle'
     ].join('; ');
 
-    const authorEl = commentEl.querySelector(BILIBILI_SELECTORS.COMMENT_AUTHOR);
+    const authorEl = commentFilter.getCommentAuthorElement(commentEl);
     if (authorEl) {
       authorEl.appendChild(warning);
     } else {
@@ -694,16 +785,16 @@ class DOMObserver {
     commentEl.classList.remove('bqf-comment-hidden', 'bqf-comment-warned');
     this.restoreInlineStyle(commentEl);
 
-    commentEl.querySelectorAll(BILIBILI_SELECTORS.COMMENT_CONTENT).forEach((contentEl) => {
-      this.restoreInlineStyle(contentEl);
-    });
+    const contentEl = commentFilter.getCommentContentContainer(commentEl);
+    this.restoreInlineStyle(contentEl);
 
-    commentEl.querySelectorAll('.bqf-comment-tools, .bqf-comment-warning, .bqf-show-anyway-btn').forEach((node) => {
+    const uiRoot = commentFilter.getCommentRendererRoot(commentEl) || commentEl;
+    uiRoot.querySelectorAll('.bqf-comment-tools, .bqf-comment-warning, .bqf-show-anyway-btn').forEach((node) => {
       node.remove();
     });
 
     if (removeBlockButtons) {
-      commentEl.querySelectorAll('.bqf-block-user-btn').forEach((button) => {
+      uiRoot.querySelectorAll('.bqf-block-user-btn').forEach((button) => {
         button.remove();
       });
     }
@@ -718,8 +809,13 @@ class DOMObserver {
       reasons: ['User is blocked'],
       action: 'hide'
     };
+    const videoCards = new Set();
+    const commentItems = new Set();
 
-    document.querySelectorAll(BILIBILI_SELECTORS.VIDEO_CARD).forEach((card) => {
+    this.collectMatchingDescendants(document, BILIBILI_SELECTORS.VIDEO_CARD, videoCards);
+    this.collectMatchingDescendants(document, BILIBILI_SELECTORS.COMMENT_ITEM, commentItems);
+
+    videoCards.forEach((card) => {
       try {
         const videoData = videoScorer.extractVideoData(card);
         const cardUid = videoData.uid || card.getAttribute('data-uid') || card.getAttribute('data-author-id');
@@ -735,7 +831,7 @@ class DOMObserver {
       }
     });
 
-    document.querySelectorAll(BILIBILI_SELECTORS.COMMENT_ITEM).forEach((commentEl) => {
+    commentItems.forEach((commentEl) => {
       try {
         const commentData = commentFilter.extractCommentData(commentEl);
         if (String(commentData.uid || '') !== normalizedUid) {

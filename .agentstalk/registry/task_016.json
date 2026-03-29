@@ -1,0 +1,9 @@
+{
+  "taskId": "016",
+  "agentId": "copilot-cli-gpt-5.4",
+  "files": [
+    "tests/package.json",
+    "tests/e2e/shadow-dom-probe.mjs"
+  ],
+  "claimedAt": "2026-03-29T11:35:06.442711Z"
+}

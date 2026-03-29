@@ -1,344 +1,315 @@
 // Bilibili Quality Filter - Background Service Worker
-// Handles message routing, cross-tab sync, and settings management
 
-import { blocklistManager, getSettings, saveSettings } from '../storage/blocklist-manager.js';
+import {
+  blocklistManager,
+  getSettings,
+  saveSettings
+} from '../storage/blocklist-manager.js';
+import {
+  DEFAULT_SETTINGS,
+  STORAGE_KEYS
+} from '../utils/constants.js';
 
-// Service Worker State
+const BILIBILI_TAB_URLS = [
+  'https://bilibili.com/*',
+  'https://*.bilibili.com/*'
+];
+
 const state = {
-  settings: null,
-  isInitialized: false
+  initialized: false,
+  initializingPromise: null,
+  settings: { ...DEFAULT_SETTINGS }
 };
 
-/**
- * Initialize service worker
- */
 async function initialize() {
-  if (state.isInitialized) return;
-
-  try {
-    // Initialize blocklist manager
-    await blocklistManager.init();
-
-    // Load settings
-    state.settings = await getSettings();
-
-    // Setup alarm for periodic cleanup
-    chrome.alarms.create('cleanup', { periodInMinutes: 60 });
-
-    state.isInitialized = true;
-    console.log('[BQF] Service Worker initialized');
-  } catch (error) {
-    console.error('[BQF] Service Worker initialization failed:', error);
+  if (state.initialized) {
+    return;
   }
+
+  if (state.initializingPromise) {
+    return state.initializingPromise;
+  }
+
+  state.initializingPromise = (async () => {
+    await blocklistManager.init();
+    state.settings = {
+      ...DEFAULT_SETTINGS,
+      ...(await getSettings())
+    };
+    state.initialized = true;
+    console.log('[BQF] Service worker initialized');
+  })().catch((error) => {
+    console.error('[BQF] Service worker initialization failed:', error);
+    throw error;
+  }).finally(() => {
+    state.initializingPromise = null;
+  });
+
+  return state.initializingPromise;
 }
 
-/**
- * Message handler
- */
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-  // Ensure initialized
-  initialize();
+  void routeMessage(message, sender)
+    .then((response) => {
+      sendResponse(response);
+    })
+    .catch((error) => {
+      console.error('[BQF] Message handling failed:', error);
+      sendResponse({
+        success: false,
+        error: error.message
+      });
+    });
 
-  const { type } = message;
-
-  switch (type) {
-    case 'GET_SETTINGS':
-      handleGetSettings(sendResponse);
-      break;
-
-    case 'UPDATE_SETTINGS':
-      handleUpdateSettings(message.settings, sendResponse);
-      break;
-
-    case 'USER_BLOCKED':
-      handleUserBlocked(message.uid, message.username, sender);
-      sendResponse({ success: true });
-      break;
-
-    case 'GET_BLOCKLIST':
-      handleGetBlocklist(sendResponse);
-      break;
-
-    case 'ADD_KEYWORD':
-      handleAddKeyword(message.keyword, message.category, message.weight, sendResponse);
-      break;
-
-    case 'REMOVE_KEYWORD':
-      handleRemoveKeyword(message.id, sendResponse);
-      break;
-
-    case 'EXPORT_DATA':
-      handleExportData(sendResponse);
-      break;
-
-    case 'IMPORT_DATA':
-      handleImportData(message.data, sendResponse);
-      break;
-
-    case 'CLEAR_ALL':
-      handleClearAll(sendResponse);
-      break;
-
-    case 'GET_STATS':
-      handleGetStats(sendResponse);
-      break;
-
-    default:
-      sendResponse({ error: 'Unknown message type' });
-  }
-
-  // Return true to indicate async response
   return true;
 });
 
-/**
- * Handle GET_SETTINGS request
- */
-async function handleGetSettings(sendResponse) {
-  try {
-    const settings = await getSettings();
-    sendResponse({ success: true, settings });
-  } catch (error) {
-    console.error('[BQF] Failed to get settings:', error);
-    sendResponse({ error: error.message });
+chrome.storage.onChanged.addListener((changes, areaName) => {
+  if (areaName !== 'sync' || !changes[STORAGE_KEYS.SETTINGS]) {
+    return;
   }
-}
 
-/**
- * Handle UPDATE_SETTINGS request
- */
-async function handleUpdateSettings(newSettings, sendResponse) {
-  try {
-    const mergedSettings = { ...state.settings, ...newSettings };
-    await saveSettings(mergedSettings);
-    state.settings = mergedSettings;
-
-    // Broadcast to all tabs
-    broadcastToAllTabs({
-      type: 'SETTINGS_UPDATED',
-      settings: mergedSettings
-    });
-
-    sendResponse({ success: true, settings: mergedSettings });
-  } catch (error) {
-    console.error('[BQF] Failed to update settings:', error);
-    sendResponse({ error: error.message });
-  }
-}
-
-/**
- * Handle USER_BLOCKED event
- */
-async function handleUserBlocked(uid, username, sender) {
-  try {
-    // Block the user
-    await blocklistManager.blockUser(uid, username, 'manual');
-
-    // Broadcast to all tabs except sender
-    const tabs = await chrome.tabs.query({});
-    for (const tab of tabs) {
-      if (tab.id !== sender.tab?.id) {
-        chrome.tabs.sendMessage(tab.id, {
-          type: 'USER_BLOCKED',
-          uid,
-          username
-        }).catch(() => {
-          // Ignore errors for tabs that don't have content script
-        });
-      }
-    }
-
-    console.log(`[BQF] User blocked: ${username} (${uid})`);
-  } catch (error) {
-    console.error('[BQF] Failed to block user:', error);
-  }
-}
-
-/**
- * Handle GET_BLOCKLIST request
- */
-async function handleGetBlocklist(sendResponse) {
-  try {
-    const users = await blocklistManager.getBlockedUsers();
-    sendResponse({ success: true, users });
-  } catch (error) {
-    console.error('[BQF] Failed to get blocklist:', error);
-    sendResponse({ error: error.message });
-  }
-}
-
-/**
- * Handle ADD_KEYWORD request
- */
-async function handleAddKeyword(keyword, category, weight, sendResponse) {
-  try {
-    const id = await blocklistManager.addKeyword(keyword, category, weight);
-
-    // Refresh keywords in all tabs
-    broadcastToAllTabs({ type: 'REFRESH_DATA' });
-
-    sendResponse({ success: true, id });
-  } catch (error) {
-    console.error('[BQF] Failed to add keyword:', error);
-    sendResponse({ error: error.message });
-  }
-}
-
-/**
- * Handle REMOVE_KEYWORD request
- */
-async function handleRemoveKeyword(id, sendResponse) {
-  try {
-    await blocklistManager.removeKeyword(id);
-
-    // Refresh keywords in all tabs
-    broadcastToAllTabs({ type: 'REFRESH_DATA' });
-
-    sendResponse({ success: true });
-  } catch (error) {
-    console.error('[BQF] Failed to remove keyword:', error);
-    sendResponse({ error: error.message });
-  }
-}
-
-/**
- * Handle EXPORT_DATA request
- */
-async function handleExportData(sendResponse) {
-  try {
-    const data = await blocklistManager.exportData();
-    sendResponse({ success: true, data });
-  } catch (error) {
-    console.error('[BQF] Failed to export data:', error);
-    sendResponse({ error: error.message });
-  }
-}
-
-/**
- * Handle IMPORT_DATA request
- */
-async function handleImportData(data, sendResponse) {
-  try {
-    await blocklistManager.importData(data);
-
-    // Refresh all tabs
-    broadcastToAllTabs({ type: 'REFRESH_DATA' });
-
-    sendResponse({ success: true });
-  } catch (error) {
-    console.error('[BQF] Failed to import data:', error);
-    sendResponse({ error: error.message });
-  }
-}
-
-/**
- * Handle CLEAR_ALL request
- */
-async function handleClearAll(sendResponse) {
-  try {
-    await blocklistManager.clearAll();
-
-    // Refresh all tabs
-    broadcastToAllTabs({ type: 'REFRESH_DATA' });
-
-    sendResponse({ success: true });
-  } catch (error) {
-    console.error('[BQF] Failed to clear all data:', error);
-    sendResponse({ error: error.message });
-  }
-}
-
-/**
- * Handle GET_STATS request
- */
-async function handleGetStats(sendResponse) {
-  try {
-    const [keywords, users, allKeywords] = await Promise.all([
-      blocklistManager.getKeywordsByCategory(),
-      blocklistManager.getBlockedUsers(),
-      blocklistManager.getAllKeywords()
-    ]);
-
-    const stats = {
-      totalKeywords: allKeywords.length,
-      keywordsByCategory: {
-        rageBait: keywords.rageBait?.length || 0,
-        clickbait: keywords.clickbait?.length || 0,
-        homogenized: keywords.homogenized?.length || 0
-      },
-      blockedUsers: users.length
-    };
-
-    sendResponse({ success: true, stats });
-  } catch (error) {
-    console.error('[BQF] Failed to get stats:', error);
-    sendResponse({ error: error.message });
-  }
-}
-
-/**
- * Broadcast message to all Bilibili tabs
- */
-async function broadcastToAllTabs(message) {
-  const tabs = await chrome.tabs.query({
-    url: ['https://bilibili.com/*', 'https://*.bilibili.com/*']
-  });
-
-  for (const tab of tabs) {
-    chrome.tabs.sendMessage(tab.id, message).catch(() => {
-      // Ignore errors for tabs that don't have content script
-    });
-  }
-}
-
-/**
- * Alarm handler for periodic tasks
- */
-chrome.alarms.onAlarm.addListener((alarm) => {
-  if (alarm.name === 'cleanup') {
-    performCleanup();
-  }
+  state.settings = {
+    ...DEFAULT_SETTINGS,
+    ...(changes[STORAGE_KEYS.SETTINGS].newValue || {})
+  };
 });
 
-/**
- * Perform periodic cleanup
- */
-async function performCleanup() {
-  try {
-    // Clear caches to free memory
-    blocklistManager._keywordCache = null;
-    blocklistManager._blockedUsersCache = null;
+chrome.runtime.onInstalled.addListener((details) => {
+  void handleInstallation(details);
+});
 
-    console.log('[BQF] Periodic cleanup completed');
-  } catch (error) {
-    console.error('[BQF] Cleanup failed:', error);
+chrome.runtime.onStartup?.addListener(() => {
+  void initialize();
+});
+
+async function routeMessage(message, sender) {
+  await initialize();
+
+  switch (message?.type) {
+    case 'GET_SETTINGS':
+      return handleGetSettings();
+    case 'UPDATE_SETTINGS':
+      return handleUpdateSettings(message.settings);
+    case 'USER_BLOCKED':
+      return handleUserBlocked(message.uid, message.username, sender?.tab?.id);
+    case 'GET_BLOCKLIST':
+      return handleGetBlocklist();
+    case 'GET_KEYWORDS':
+      return handleGetKeywords();
+    case 'ADD_KEYWORD':
+      return handleAddKeyword(message.keyword, message.category, message.weight);
+    case 'REMOVE_KEYWORD':
+      return handleRemoveKeyword(message.id);
+    case 'UNBLOCK_USER':
+      return handleUnblockUser(message.uid);
+    case 'EXPORT_DATA':
+      return handleExportData();
+    case 'IMPORT_DATA':
+      return handleImportData(message.data);
+    case 'CLEAR_ALL':
+      return handleClearAll();
+    case 'GET_STATS':
+      return handleGetStats();
+    default:
+      return {
+        success: false,
+        error: 'Unknown message type'
+      };
   }
 }
 
-/**
- * Handle installation/update
- */
-chrome.runtime.onInstalled.addListener((details) => {
+async function handleInstallation(details) {
   if (details.reason === 'install') {
+    await saveSettings({ ...DEFAULT_SETTINGS });
+    state.settings = { ...DEFAULT_SETTINGS };
     console.log('[BQF] Extension installed');
-    // Set default settings
-    saveSettings({
-      enabled: true,
-      filterRageBait: true,
-      filterClickbait: true,
-      filterHomogenized: true,
-      filterComments: true,
-      dimInsteadOfHide: false,
-      autoCollapseComments: true,
-      showBlockUserButton: true
-    });
   } else if (details.reason === 'update') {
     console.log(`[BQF] Extension updated from ${details.previousVersion}`);
   }
 
-  // Initialize
-  initialize();
-});
+  await initialize();
+}
 
-// Initialize on startup
-initialize();
+async function handleGetSettings() {
+  const settings = await getSettings();
+  state.settings = {
+    ...DEFAULT_SETTINGS,
+    ...settings
+  };
+
+  return {
+    success: true,
+    settings: state.settings
+  };
+}
+
+async function handleUpdateSettings(newSettings = {}) {
+  state.settings = {
+    ...DEFAULT_SETTINGS,
+    ...state.settings,
+    ...newSettings
+  };
+
+  await saveSettings(state.settings);
+  await broadcastToAllTabs({
+    type: 'SETTINGS_UPDATED',
+    settings: state.settings
+  });
+
+  return {
+    success: true,
+    settings: state.settings
+  };
+}
+
+async function handleUserBlocked(uid, username, senderTabId) {
+  if (!uid) {
+    return {
+      success: false,
+      error: 'uid is required'
+    };
+  }
+
+  const normalizedUid = String(uid);
+  const safeUsername = username || normalizedUid;
+  const alreadyBlocked = await blocklistManager.isUserBlocked(normalizedUid);
+
+  if (!alreadyBlocked) {
+    await blocklistManager.blockUser(normalizedUid, safeUsername, 'manual');
+  }
+
+  await broadcastToAllTabs({
+    type: 'USER_BLOCKED',
+    uid: normalizedUid,
+    username: safeUsername
+  }, senderTabId);
+
+  return { success: true };
+}
+
+async function handleGetBlocklist() {
+  const users = await blocklistManager.getBlockedUsers();
+  return {
+    success: true,
+    users
+  };
+}
+
+async function handleGetKeywords() {
+  const grouped = {
+    rageBait: [],
+    clickbait: [],
+    homogenized: []
+  };
+
+  const keywords = await blocklistManager.getAllKeywords();
+  for (const keyword of keywords) {
+    if (!grouped[keyword.category]) {
+      grouped[keyword.category] = [];
+    }
+
+    grouped[keyword.category].push({
+      id: keyword.id,
+      keyword: keyword.keyword,
+      weight: keyword.weight,
+      severity: keyword.severity,
+      enabled: keyword.enabled
+    });
+  }
+
+  return {
+    success: true,
+    keywords: grouped
+  };
+}
+
+async function handleAddKeyword(keyword, category, weight) {
+  const id = await blocklistManager.addKeyword(keyword, category, weight);
+  await broadcastToAllTabs({ type: 'REFRESH_DATA' });
+
+  return {
+    success: true,
+    id
+  };
+}
+
+async function handleRemoveKeyword(id) {
+  await blocklistManager.removeKeyword(id);
+  await broadcastToAllTabs({ type: 'REFRESH_DATA' });
+
+  return { success: true };
+}
+
+async function handleUnblockUser(uid) {
+  if (!uid) {
+    return {
+      success: false,
+      error: 'uid is required'
+    };
+  }
+
+  await blocklistManager.unblockUser(uid);
+  await broadcastToAllTabs({ type: 'REFRESH_DATA' });
+
+  return { success: true };
+}
+
+async function handleExportData() {
+  const data = await blocklistManager.exportData();
+  return {
+    success: true,
+    data
+  };
+}
+
+async function handleImportData(data) {
+  await blocklistManager.importData(data);
+  await broadcastToAllTabs({ type: 'REFRESH_DATA' });
+
+  return { success: true };
+}
+
+async function handleClearAll() {
+  await blocklistManager.clearAll();
+  await broadcastToAllTabs({ type: 'REFRESH_DATA' });
+
+  return { success: true };
+}
+
+async function handleGetStats() {
+  const [keywords, users] = await Promise.all([
+    blocklistManager.getAllKeywords(),
+    blocklistManager.getBlockedUsers()
+  ]);
+
+  const keywordsByCategory = keywords.reduce((acc, keyword) => {
+    acc[keyword.category] = (acc[keyword.category] || 0) + 1;
+    return acc;
+  }, {
+    rageBait: 0,
+    clickbait: 0,
+    homogenized: 0
+  });
+
+  return {
+    success: true,
+    stats: {
+      totalKeywords: keywords.length,
+      keywordsByCategory,
+      blockedUsers: users.length
+    }
+  };
+}
+
+async function broadcastToAllTabs(message, excludedTabId = null) {
+  const tabs = await chrome.tabs.query({ url: BILIBILI_TAB_URLS });
+
+  await Promise.allSettled(
+    tabs
+      .filter((tab) => tab.id && tab.id !== excludedTabId)
+      .map((tab) => chrome.tabs.sendMessage(tab.id, message))
+  );
+}
+
+void initialize();

@@ -6,6 +6,35 @@ import {
   SCORE_THRESHOLDS,
   BILIBILI_SELECTORS
 } from '../utils/constants.js';
+import {
+  deepQuerySelector,
+  getTextContent
+} from '../utils/shadow-dom-utils.js';
+
+const BVID_PATTERN = /(BV[0-9A-Za-z]+)/i;
+const UID_PATTERN = /space\.bilibili\.com\/(\d+)/i;
+
+function normalizeText(value) {
+  return (value || '').replace(/\s+/g, ' ').trim();
+}
+
+function extractBvid(value) {
+  if (!value) {
+    return null;
+  }
+
+  const match = String(value).match(BVID_PATTERN);
+  return match ? match[1] : null;
+}
+
+function extractUid(value) {
+  if (!value) {
+    return null;
+  }
+
+  const match = String(value).match(UID_PATTERN);
+  return match ? match[1] : null;
+}
 
 class VideoScorer {
   constructor() {
@@ -173,10 +202,11 @@ class VideoScorer {
     }
 
     // Check for ALL CAPS or full-width caps
-    const capsMatches = title.match(/[A-Z\u4E00-\u9FFF]/g);
-    if (capsMatches && capsMatches.length / title.length > 0.3) {
+    const capsMatches = title.match(TITLE_PATTERNS.CAPS_RATIO);
+    const visibleLength = title.replace(/\s+/g, '').length || title.length;
+    if (capsMatches && capsMatches.length / visibleLength > 0.3) {
       penalty += 15;
-      reasons.push('Excessive caps/full-width characters');
+      reasons.push('Excessive caps');
     }
 
     // Check for emoji spam
@@ -224,44 +254,43 @@ class VideoScorer {
     };
 
     try {
-      // Try to get title
-      const titleEl = videoCard.querySelector(
-        '.bili-video-card__title, .video-card__title, .title, [data-title]'
-      );
-      if (titleEl) {
-        data.title = titleEl.textContent?.trim() || '';
-      }
+      const titleEl = deepQuerySelector(BILIBILI_SELECTORS.VIDEO_CARD_TITLE, videoCard);
+      const videoLink = deepQuerySelector(BILIBILI_SELECTORS.VIDEO_CARD_LINK, videoCard) ||
+        (videoCard.matches?.(BILIBILI_SELECTORS.VIDEO_CARD_LINK) ? videoCard : null);
+      const authorEl = deepQuerySelector(BILIBILI_SELECTORS.VIDEO_CARD_AUTHOR, videoCard);
+      const authorLink = authorEl?.matches?.('a[href*="space.bilibili.com/"]')
+        ? authorEl
+        : deepQuerySelector('a[href*="space.bilibili.com/"]', authorEl || videoCard);
 
-      // Try to get author
-      const authorEl = videoCard.querySelector(
-        '.bili-video-card__info--author, .video-card__author, .author'
+      data.title = normalizeText(
+        titleEl?.getAttribute('title') ||
+        titleEl?.getAttribute('data-title') ||
+        getTextContent(titleEl) ||
+        videoLink?.getAttribute('title') ||
+        getTextContent(videoLink) ||
+        videoCard.getAttribute('title') ||
+        videoCard.getAttribute('data-title')
       );
-      if (authorEl) {
-        data.author = authorEl.textContent?.trim() || '';
-      }
 
-      // Try to get UID from data attribute or link
+      data.author = normalizeText(
+        authorEl?.getAttribute('title') ||
+        getTextContent(authorEl) ||
+        authorLink?.getAttribute('title') ||
+        getTextContent(authorLink)
+      );
+
       const uidAttr = videoCard.getAttribute('data-uid') ||
-                      videoCard.getAttribute('data-author-id');
-      if (uidAttr) {
-        data.uid = uidAttr;
-      }
+        videoCard.getAttribute('data-author-id');
+      data.uid = uidAttr ||
+        extractUid(authorLink?.getAttribute?.('href') || authorLink?.href) ||
+        extractUid(authorEl?.getAttribute?.('href'));
 
-      // Try to get BV ID
       const bvidAttr = videoCard.getAttribute('data-bvid') ||
-                       videoCard.getAttribute('data-video-id');
-      if (bvidAttr) {
-        data.bvid = bvidAttr;
-      }
-
-      // Try to extract from URL if available
-      const link = videoCard.querySelector('a[href*="/video/"]');
-      if (link) {
-        const match = link.href.match(/\/video\/(BV\w+)/);
-        if (match) {
-          data.bvid = match[1];
-        }
-      }
+        videoCard.getAttribute('data-video-id') ||
+        videoCard.getAttribute('data-key');
+      data.bvid = extractBvid(bvidAttr) ||
+        extractBvid(videoLink?.getAttribute?.('href') || videoLink?.href) ||
+        extractBvid(videoLink?.getAttribute('href'));
 
     } catch (error) {
       console.error('[BQF] Error extracting video data:', error);

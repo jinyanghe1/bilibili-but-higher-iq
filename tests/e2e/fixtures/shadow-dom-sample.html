@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Shadow DOM Probe Fixture</title>
+    <style>
+      body {
+        font-family: sans-serif;
+      }
+    </style>
+  </head>
+  <body>
+    <main id="app">
+      <h1>Shadow DOM Probe Fixture</h1>
+      <shadow-video-feed></shadow-video-feed>
+      <shadow-comments-section></shadow-comments-section>
+    </main>
+
+    <script>
+      class ShadowVideoFeed extends HTMLElement {
+        connectedCallback() {
+          if (this.shadowRoot) {
+            return;
+          }
+
+          const root = this.attachShadow({ mode: 'open' });
+          root.innerHTML = `
+            <section class="feed-shell">
+              <bili-video-card
+                data-bvid="BV1TESTFEED01"
+                data-uid="123456"
+                data-title="Shadow DOM feed title"
+                data-author="Shadow UP"
+              ></bili-video-card>
+              <bili-video-card
+                data-bvid="BV1TESTNEST02"
+                data-uid="654321"
+                data-title="Nested shadow title"
+                data-author="Nested UP"
+              ></bili-video-card>
+            </section>
+          `;
+        }
+      }
+
+      class BiliVideoCard extends HTMLElement {
+        connectedCallback() {
+          if (this.shadowRoot) {
+            return;
+          }
+
+          const bvid = this.getAttribute('data-bvid');
+          const uid = this.getAttribute('data-uid');
+          const title = this.getAttribute('data-title');
+          const author = this.getAttribute('data-author');
+          const root = this.attachShadow({ mode: 'open' });
+          root.innerHTML = `
+            <article class="video-page-card-small" data-video-id="${bvid}">
+              <a class="title-txt" href="https://www.bilibili.com/video/${bvid}">
+                ${title}
+              </a>
+              <a class="author" href="//space.bilibili.com/${uid}">${author}</a>
+            </article>
+          `;
+        }
+      }
+
+      class ShadowCommentsSection extends HTMLElement {
+        connectedCallback() {
+          if (this.shadowRoot) {
+            return;
+          }
+
+          const root = this.attachShadow({ mode: 'open' });
+          root.innerHTML = `
+            <bili-comments>
+              <section id="contents">
+                <bili-comment-thread-renderer
+                  data-rid="root-comment"
+                  data-uid="9988"
+                  data-username="Root Commenter"
+                  data-content="理性分析和数据来源都很清楚。"
+                ></bili-comment-thread-renderer>
+                <bili-comment-reply-renderer
+                  data-rid="nested-comment"
+                  data-uid="7788"
+                  data-username="Nested Commenter"
+                  data-content="这是一个嵌套 shadow root 评论。"
+                ></bili-comment-reply-renderer>
+              </section>
+            </bili-comments>
+          `;
+        }
+      }
+
+      class BiliCommentUserInfo extends HTMLElement {
+        connectedCallback() {
+          if (this.shadowRoot) {
+            return;
+          }
+
+          const uid = this.getAttribute('data-uid') || '';
+          const username = this.getAttribute('data-username') || '';
+          const root = this.attachShadow({ mode: 'open' });
+          root.innerHTML = `
+            <a id="user-name" data-user-profile-id="${uid}" href="//space.bilibili.com/${uid}">
+              ${username}
+            </a>
+          `;
+        }
+      }
+
+      class BiliRichText extends HTMLElement {
+        connectedCallback() {
+          if (this.shadowRoot) {
+            return;
+          }
+
+          const text = this.getAttribute('data-content') || '';
+          const root = this.attachShadow({ mode: 'open' });
+          root.innerHTML = `<div id="contents">${text}</div>`;
+        }
+      }
+
+      class BiliCommentThreadRenderer extends HTMLElement {
+        connectedCallback() {
+          if (this.shadowRoot) {
+            return;
+          }
+
+          const rid = this.getAttribute('data-rid') || '';
+          const uid = this.getAttribute('data-uid') || '';
+          const username = this.getAttribute('data-username') || '';
+          const content = this.getAttribute('data-content') || '';
+          const root = this.attachShadow({ mode: 'open' });
+          root.innerHTML = `
+            <article class="thread-shell" data-rid="${rid}">
+              <bili-comment-user-info data-uid="${uid}" data-username="${username}"></bili-comment-user-info>
+              <bili-rich-text id="content" data-content="${content}"></bili-rich-text>
+              <div id="footer"></div>
+            </article>
+          `;
+        }
+      }
+
+      class BiliCommentReplyRenderer extends HTMLElement {
+        connectedCallback() {
+          if (this.shadowRoot) {
+            return;
+          }
+
+          const rid = this.getAttribute('data-rid') || '';
+          const uid = this.getAttribute('data-uid') || '';
+          const username = this.getAttribute('data-username') || '';
+          const content = this.getAttribute('data-content') || '';
+          const root = this.attachShadow({ mode: 'open' });
+          root.innerHTML = `
+            <article class="reply-shell" data-rid="${rid}">
+              <bili-comment-user-info data-uid="${uid}" data-username="${username}"></bili-comment-user-info>
+              <bili-rich-text data-content="${content}"></bili-rich-text>
+              <div class="action-list"></div>
+            </article>
+          `;
+        }
+      }
+
+      customElements.define('shadow-video-feed', ShadowVideoFeed);
+      customElements.define('bili-video-card', BiliVideoCard);
+      customElements.define('shadow-comments-section', ShadowCommentsSection);
+      customElements.define('bili-comment-user-info', BiliCommentUserInfo);
+      customElements.define('bili-rich-text', BiliRichText);
+      customElements.define('bili-comment-thread-renderer', BiliCommentThreadRenderer);
+      customElements.define('bili-comment-reply-renderer', BiliCommentReplyRenderer);
+    </script>
+  </body>
+</html>

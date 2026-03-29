@@ -6,7 +6,16 @@
       "id": "001",
       "title": "Create extension directory structure",
       "status": "DONE",
-      "files": ["manifest.json", "_locales/*", "background/", "content/", "storage/", "ui/", "styles/", "utils/"],
+      "files": [
+        "manifest.json",
+        "_locales/*",
+        "background/",
+        "content/",
+        "storage/",
+        "ui/",
+        "styles/",
+        "utils/"
+      ],
       "agent": "claude",
       "completedAt": "2026-03-29"
     },
@@ -14,7 +23,9 @@
       "id": "002",
       "title": "Implement manifest.json (Manifest V3)",
       "status": "DONE",
-      "files": ["manifest.json"],
+      "files": [
+        "manifest.json"
+      ],
       "agent": "claude",
       "completedAt": "2026-03-29"
     },
@@ -22,7 +33,9 @@
       "id": "003",
       "title": "Implement utils/constants.js",
       "status": "DONE",
-      "files": ["utils/constants.js"],
+      "files": [
+        "utils/constants.js"
+      ],
       "agent": "claude",
       "completedAt": "2026-03-29"
     },
@@ -30,7 +43,9 @@
       "id": "004",
       "title": "Implement storage/blocklist-manager.js",
       "status": "DONE",
-      "files": ["storage/blocklist-manager.js"],
+      "files": [
+        "storage/blocklist-manager.js"
+      ],
       "agent": "claude",
       "completedAt": "2026-03-29"
     },
@@ -38,7 +53,9 @@
       "id": "005",
       "title": "Implement content/video-scorer.js",
       "status": "DONE",
-      "files": ["content/video-scorer.js"],
+      "files": [
+        "content/video-scorer.js"
+      ],
       "agent": "claude",
       "completedAt": "2026-03-29"
     },
@@ -46,7 +63,9 @@
       "id": "006",
       "title": "Implement content/comment-filter.js",
       "status": "DONE",
-      "files": ["content/comment-filter.js"],
+      "files": [
+        "content/comment-filter.js"
+      ],
       "agent": "claude",
       "completedAt": "2026-03-29"
     },
@@ -54,7 +73,9 @@
       "id": "007",
       "title": "Implement content/dom-observer.js",
       "status": "DONE",
-      "files": ["content/dom-observer.js"],
+      "files": [
+        "content/dom-observer.js"
+      ],
       "agent": "claude",
       "completedAt": "2026-03-29"
     },
@@ -62,7 +83,9 @@
       "id": "008",
       "title": "Implement background/service-worker.js",
       "status": "DONE",
-      "files": ["background/service-worker.js"],
+      "files": [
+        "background/service-worker.js"
+      ],
       "agent": "claude",
       "completedAt": "2026-03-29"
     },
@@ -70,7 +93,11 @@
       "id": "009",
       "title": "Implement UI/popup (popup.html, popup.js, popup.css)",
       "status": "DONE",
-      "files": ["ui/popup/popup.html", "ui/popup/popup.js", "ui/popup/popup.css"],
+      "files": [
+        "ui/popup/popup.html",
+        "ui/popup/popup.js",
+        "ui/popup/popup.css"
+      ],
       "agent": "claude",
       "completedAt": "2026-03-29"
     },
@@ -78,7 +105,11 @@
       "id": "010",
       "title": "Implement UI/options (options.html, options.js, options.css)",
       "status": "DONE",
-      "files": ["ui/options/options.html", "ui/options/options.js", "ui/options/options.css"],
+      "files": [
+        "ui/options/options.html",
+        "ui/options/options.js",
+        "ui/options/options.css"
+      ],
       "agent": "claude",
       "completedAt": "2026-03-29"
     },
@@ -86,7 +117,9 @@
       "id": "011",
       "title": "Create styles/content.css",
       "status": "DONE",
-      "files": ["styles/content.css"],
+      "files": [
+        "styles/content.css"
+      ],
       "agent": "claude",
       "completedAt": "2026-03-29"
     },
@@ -94,31 +127,167 @@
       "id": "012",
       "title": "Create extension icons",
       "status": "DONE",
-      "files": ["icons/icon-48.png", "icons/icon-128.png", "icons/icon.svg"],
+      "files": [
+        "icons/icon-48.png",
+        "icons/icon-128.png",
+        "icons/icon.svg"
+      ],
       "agent": "claude",
       "completedAt": "2026-03-29"
     },
     {
       "id": "013",
-      "title": "Test extension on Bilibili",
-      "status": "TODO",
-      "files": [],
-      "agent": null,
-      "dependsOn": ["007", "008", "009", "010", "011", "012"]
+      "title": "Create testing documentation",
+      "status": "DONE",
+      "files": [
+        "TESTING.md"
+      ],
+      "agent": "codex",
+      "completedAt": "2026-03-29 19:21:40 CST",
+      "startedAt": "2026-03-29 19:13:22 CST"
+    },
+    {
+      "id": "014",
+      "title": "Create README and LICENSE",
+      "status": "DONE",
+      "files": [
+        "README.md",
+        "LICENSE"
+      ],
+      "agent": "claude",
+      "completedAt": "2026-03-29"
+    },
+    {
+      "id": "015",
+      "title": "Fix live Bilibili selector compatibility",
+      "status": "DONE",
+      "files": [
+        "utils/constants.js",
+        "content/video-scorer.js",
+        "content/comment-filter.js",
+        "content/dom-observer.js",
+        "storage/blocklist-manager.js"
+      ],
+      "agent": "codex",
+      "startedAt": "2026-03-29 19:24:30 CST",
+      "completedAt": "2026-03-29 19:40:49 CST",
+      "dependsOn": [
+        "013"
+      ]
+    },
+    {
+      "id": "016",
+      "title": "Create Shadow DOM piercing utilities",
+      "status": "DONE",
+      "files": [
+        "utils/shadow-dom-utils.js"
+      ],
+      "agent": "kimi",
+      "startedAt": "2026-03-29 19:35:00 CST",
+      "completedAt": "2026-03-29 19:37:00 CST",
+      "dependsOn": [
+        "015"
+      ],
+      "note": "Support task for Shadow DOM compatibility - provides deepQuerySelector, observeShadowDOM, and Bilibili-specific selectors"
+    },
+    {
+      "id": "017",
+      "title": "Add Shadow DOM probe fixture tests",
+      "status": "DONE",
+      "files": [
+        "tests/package.json",
+        "tests/e2e/fixtures/shadow-dom-sample.html",
+        "tests/e2e/shadow-dom-probe.test.mjs"
+      ],
+      "agent": "copilot-cli-gpt-5.4",
+      "startedAt": "2026-03-29 11:40:38 UTC",
+      "completedAt": "2026-03-29 11:41:28 UTC",
+      "dependsOn": [
+        "016"
+      ],
+      "note": "严厉代码审查，发现关键问题：Shadow DOM缺失、ML模块缺失、代码重复、性能问题等"
+    },
+    {
+      "id": "018",
+      "title": "Fix E2E test infrastructure",
+      "status": "DONE",
+      "files": [
+        "tests/e2e/shadow-dom-integration.test.mjs"
+      ],
+      "agent": "copilot-cli-gpt-5.4",
+      "startedAt": "2026-03-29 11:53:10 UTC",
+      "dependsOn": [
+        "015",
+        "016",
+        "017"
+      ],
+      "note": "Fixed browser-side file:// import failure by serving repo modules over local HTTP in shadow-dom-integration.test.mjs; locked integration test passes.",
+      "completedAt": "2026-03-29 11:54:21 UTC"
+    },
+    {
+      "id": "019",
+      "title": "Investigate shadowdom test failures",
+      "status": "DONE",
+      "files": [
+        "tests/e2e/shadow-dom-probe.test.mjs",
+        "tests/e2e/shadow-dom-integration.test.mjs",
+        "tests/e2e/fixtures/shadow-dom-sample.html",
+        "tests/e2e/shadow-dom-probe.mjs"
+      ],
+      "agent": "copilot-cli-gpt-5.4",
+      "startedAt": "2026-03-29 11:49:13 UTC",
+      "dependsOn": [
+        "017",
+        "018"
+      ],
+      "completedAt": "2026-03-29 11:50:35 UTC"
+    },
+    {
+      "id": "020",
+      "title": "Deduplicate shared settings/constants",
+      "status": "DONE",
+      "files": [
+        "storage/blocklist-manager.js",
+        "ui/options/options.js",
+        "ui/popup/popup.js"
+      ],
+      "agent": "codex",
+      "startedAt": "2026-03-29 20:07:00 CST",
+      "dependsOn": [
+        "015"
+      ],
+      "note": "Consolidate duplicated DEFAULT_SETTINGS and default keyword presets onto utils/constants.js to prevent config drift.",
+      "completedAt": "2026-03-29 20:10:00 CST"
     }
   ],
   "milestones": {
     "v0.1.0": {
       "name": "MVP Release",
-      "tasks": ["001", "002", "003", "004", "005", "006", "007", "008", "009", "010", "011", "012"],
+      "tasks": [
+        "001",
+        "002",
+        "003",
+        "004",
+        "005",
+        "006",
+        "007",
+        "008",
+        "009",
+        "010",
+        "011",
+        "012",
+        "013",
+        "014"
+      ],
       "target": "2026-04-15",
-      "status": "COMPLETED"
+      "completedAt": "2026-03-29"
     },
     "v0.2.0": {
       "name": "ML Enhancement",
-      "tasks": ["ml/sentiment-analyzer.js"],
-      "target": "2026-05-01",
-      "status": "PLANNED"
+      "tasks": [
+        "ml/sentiment-analyzer.js"
+      ],
+      "target": "2026-05-01"
     }
   }
 }

@@ -1,0 +1,13 @@
+{
+  "name": "bilibili-quality-filter-tests",
+  "version": "0.2.0",
+  "private": true,
+  "scripts": {
+    "test": "playwright test",
+    "probe:shadowdom": "node --experimental-default-type=module e2e/shadow-dom-probe.mjs",
+    "test:probe": "node --test e2e/shadow-dom-probe.test.mjs e2e/shadow-dom-integration.test.mjs"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.40.0"
+  }
+}
