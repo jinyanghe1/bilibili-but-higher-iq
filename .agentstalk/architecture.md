@@ -154,23 +154,33 @@ chrome.runtime.sendMessage({ type: 'GET_SETTINGS' })
 
 | 元素 | Selector |
 |------|----------|
-| 视频卡片 | `.bili-video-card, .video-card, [data-video-id]` |
-| 视频标题 | `.bili-video-card__title, .video-card__title, .title` |
-| 作者名 | `.bili-video-card__info--author, .video-card__author` |
-| 评论列表 | `.comment-list, #comment, .comment` |
-| 评论项 | `.comment-item, .list-item` |
-| 评论作者 | `.user-name, .author-name, [data-user-id]` |
-| 评论内容 | `.comment-content, .text, .content` |
+| 视频卡片 | `.bili-video-card, .bili-feed-card, .feed-card, .floor-single-card, .floor-card, .single-card, .video-page-card-small, .video-pod__item, .card-box, [data-video-id], [data-key^="BV"]` |
+| 视频标题 | `.bili-video-card__title, .bili-video-card__info--tit, .video-card__title, .video-title, .title-txt, .title, .entry-title, h3 a, h3` |
+| 作者名 | `.bili-video-card__info--author, .bili-video-card__info--owner, .video-card__author, .author, .up-name, a[href*="//space.bilibili.com/"]` |
+| 评论宿主 | `bili-comments` |
+| 评论列表 / 线程 | `#feed, #contents, bili-comment-thread-renderer, bili-comment-reply-renderer` |
+| 评论渲染器 | `bili-comment-renderer, bili-comment-reply-renderer` |
+| 评论作者 | `bili-comment-user-info`, `.user-name, .author-name, [data-user-id], .name, #user-name, #user-name a` |
+| 评论内容 | `bili-rich-text`, `.comment-content, .text, .content, [data-text], #content, #contents` |
 | 主内容区 | `#bili-main, #app, main, [role="main"]` |
+
+评论区适配规范:
+- 评论系统按多层 open Shadow DOM 处理，而不是假设为平面 DOM。
+- 数据提取优先读取 `bili-comment-renderer` / `bili-comment-reply-renderer` 上的 `__data`。
+- DOM 查询仅作为回退路径，回退时需要递归进入 open shadow roots 读取 `#contents`、`#user-name`、`#footer` 等节点。
 
 ### 4.2 MutationObserver 配置
 
 ```javascript
-observer.observe(document.querySelector('#bili-main'), {
+observer.observe(document.body, {
   childList: true,
   subtree: true
 })
 ```
+
+补充约束:
+- 观察器需要递归发现并直接观察 open shadow roots。
+- URL 变化探测优先依赖 History API patch、`popstate/hashchange` 和 Navigation API `currententrychange`，轮询仅作为降级方案。
 
 ---
 
@@ -215,7 +225,10 @@ settings: {
   filterComments: boolean,
   dimInsteadOfHide: boolean,
   autoCollapseComments: boolean,
-  showBlockUserButton: boolean
+  showBlockUserButton: boolean,
+  commentFilterMode: 'blocklist' | 'allowlist',
+  blocklistIntensity: 'simple' | 'mild' | 'radical',
+  enableMLSentiment: boolean
 }
 ```
 

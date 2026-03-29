@@ -278,7 +278,8 @@
     {
       "id": "022",
       "title": "Block user should immediately collapse comment",
-      "status": "TODO",
+      "status": "DOING",
+      "agent": "kimi",
       "files": [
         "content/comment-filter.js"
       ],
@@ -289,7 +290,8 @@
     {
       "id": "023",
       "title": "Low-quality comments should be hidden, not dimmed",
-      "status": "TODO",
+      "status": "DOING",
+      "agent": "kimi",
       "files": [
         "content/comment-filter.js"
       ],
