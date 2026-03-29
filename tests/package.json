@@ -3,7 +3,8 @@
   "version": "0.2.0",
   "private": true,
   "scripts": {
-    "test": "playwright test",
+    "test": "playwright test --config e2e/playwright.config.js",
+    "test:extension": "playwright test --config e2e/playwright.config.js",
     "probe:shadowdom": "node --experimental-default-type=module e2e/shadow-dom-probe.mjs",
     "test:probe": "node --test e2e/shadow-dom-probe.test.mjs e2e/shadow-dom-integration.test.mjs"
   },
