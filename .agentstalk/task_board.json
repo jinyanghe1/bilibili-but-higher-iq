@@ -273,31 +273,121 @@
       "dependsOn": [
         "018"
       ],
-      "note": "Prefer native navigation events over unconditional URL polling and align architecture.md with current Shadow DOM selectors/settings schema."
+      "note": "Repair the MV3 extension smoke harness by fixing the Playwright entrypoint, config wiring, and extension bootstrap path."
+    },
+    {
+      "id": "024",
+      "title": "Reduce observer polling and refresh architecture baseline",
+      "status": "DONE",
+      "files": [
+        "content/dom-observer.js",
+        ".agentstalk/architecture.md"
+      ],
+      "agent": "codex",
+      "startedAt": "2026-03-29 20:14:00 CST",
+      "dependsOn": [
+        "015",
+        "020"
+      ],
+      "note": "Prefer Navigation API currententrychange over unconditional URL polling and align architecture.md with current Shadow DOM selectors/settings schema.",
+      "completedAt": "2026-03-29 22:12:00 CST"
+    },
+    {
+      "id": "025",
+      "title": "Scope characterData rescans to relevant targets",
+      "status": "DONE",
+      "files": [
+        "content/dom-observer.js"
+      ],
+      "agent": "codex",
+      "startedAt": "2026-03-29 22:15:00 CST",
+      "dependsOn": [
+        "024"
+      ],
+      "note": "Keep characterData observation for compatibility, but ignore text mutations outside video/comment-related contexts.",
+      "completedAt": "2026-03-29 22:18:00 CST"
     },
     {
       "id": "022",
       "title": "Block user should immediately collapse comment",
-      "status": "DOING",
+      "status": "DONE",
       "agent": "kimi",
       "files": [
-        "content/comment-filter.js"
+        "content/comment-filter.js",
+        "content/dom-observer.js"
       ],
       "description": "When clicking 'Block User' button, the comment should collapse/hide immediately without requiring page refresh. Currently the comment stays visible until next page load.",
       "severity": "medium",
-      "dependsOn": []
+      "dependsOn": [],
+      "completedAt": "2026-03-29T19:15:00+08:00"
     },
     {
       "id": "023",
       "title": "Low-quality comments should be hidden, not dimmed",
-      "status": "DOING",
+      "status": "DONE",
       "agent": "kimi",
       "files": [
-        "content/comment-filter.js"
+        "content/comment-filter.js",
+        "content/dom-observer.js"
       ],
       "description": "Comments with spam patterns or low information density (even from non-blocked users) should be completely hidden instead of dimmed. The 'dimInsteadOfHide' setting only controls video dimming, not comment behavior. Comments that spam emojis, repeated chars, or have low-quality indicators should be hidden directly.",
       "severity": "medium",
-      "dependsOn": []
+      "dependsOn": [],
+      "completedAt": "2026-03-29T19:15:00+08:00"
+    },
+    {
+      "id": "026",
+      "title": "Research ML parameters tuning (temperature/top-p)",
+      "status": "TODO",
+      "files": [
+        "ml/sentiment-analyzer.js",
+        "utils/constants.js"
+      ],
+      "description": "Research @xenova/transformers temperature/top-p/top-k parameters. Test different model variants. Add configurable ML parameters in settings. Default temperature=0.7, topP=0.9.",
+      "priority": "P1",
+      "dependsOn": ["021"]
+    },
+    {
+      "id": "027",
+      "title": "Closure operations: extract keywords from blocked users",
+      "status": "TODO",
+      "files": [
+        "content/comment-filter.js",
+        "storage/blocklist-manager.js",
+        "ui/options/options.html"
+      ],
+      "description": "When blocking a user, offer to extract keywords from their comments and add to blocklist. User must confirm before adding. Provide checkbox option in block confirmation dialog. Implement basic Chinese word segmentation.",
+      "priority": "P1",
+      "dependsOn": ["022", "026"]
+    },
+    {
+      "id": "028",
+      "title": "Implement import/export functionality",
+      "status": "TODO",
+      "files": [
+        "storage/blocklist-manager.js",
+        "ui/options/options.html",
+        "ui/options/options.js"
+      ],
+      "description": "Research chrome.storage import/export limitations. Implement JSON export/import for settings and blocklist. Support rule package format for sharing. Add export/import buttons in Options page.",
+      "priority": "P2",
+      "dependsOn": ["026"]
+    },
+    {
+      "id": "029",
+      "title": "Periodic code review and quality assurance",
+      "status": "TODO",
+      "agent": "code-reviewer",
+      "files": [
+        "content/*.js",
+        "storage/*.js",
+        "utils/*.js",
+        "tests/e2e/*.mjs"
+      ],
+      "description": "Periodic review of code quality, performance, and test coverage. Run Playwright tests after each significant change. Report issues, suggest optimizations, and verify fixes. This is a recurring task.",
+      "priority": "P0",
+      "interval": "after each commit",
+      "dependsOn": ["021"]
     }
   ],
   "milestones": {

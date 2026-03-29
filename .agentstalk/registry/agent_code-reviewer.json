@@ -1,0 +1,13 @@
+{
+  "agentId": "code-reviewer",
+  "name": "Code Reviewer",
+  "type": "periodic-reviewer",
+  "description": "Periodically reviews code changes, runs tests, and provides feedback",
+  "tasks": ["029"],
+  "capabilities": [
+    "code-review",
+    "test-execution",
+    "performance-analysis"
+  ],
+  "interval": "after each commit"
+}
