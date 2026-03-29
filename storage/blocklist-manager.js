@@ -138,8 +138,8 @@ export class BlocklistManager {
     return new Promise((resolve, reject) => {
       const tx = database.transaction('keywords', 'readonly');
       const store = tx.objectStore('keywords');
-      const index = store.index('enabled');
-      const request = index.getAll(true);
+      // Get all keywords without using the 'enabled' index (index may have issues with boolean keys)
+      const request = store.getAll();
 
       request.onsuccess = () => {
         const keywords = request.result;
@@ -174,7 +174,7 @@ export class BlocklistManager {
       const tx = database.transaction('keywords', 'readonly');
       const store = tx.objectStore('keywords');
       const index = store.index('enabled');
-      const request = index.getAll(true);
+      const request = index.getAll();
 
       request.onsuccess = () => {
         this._keywordCache = request.result;

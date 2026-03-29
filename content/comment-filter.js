@@ -144,6 +144,14 @@ class CommentFilter {
         }
       }
 
+      if (this.keywords.homogenized) {
+        const homoResult = this.checkKeywords(contentLower, this.keywords.homogenized);
+        if (homoResult.matched > 0) {
+          score -= homoResult.weight * homoResult.matched * 20;
+          reasons.push(`Homogenized: ${homoResult.matched}`);
+        }
+      }
+
       // Layer 4: Pattern analysis
       const patternResult = this.analyzeCommentPatterns(content);
       score -= patternResult.penalty;
@@ -257,19 +265,19 @@ class CommentFilter {
 
     // Check for punctuation spam
     if (content.match(COMMENT_PATTERNS.PUNCTUATION_SPAM)) {
-      penalty += 15;
+      penalty += 40;
       reasons.push('Excessive punctuation');
     }
 
     // Check for ALL CAPS spam (English rage)
     if (content.match(COMMENT_PATTERNS.CAPS_SPAM)) {
-      penalty += 20;
+      penalty += 45;
       reasons.push('CAPS spam');
     }
 
     // Check for repeated characters
     if (content.match(COMMENT_PATTERNS.REPEATED_CHARS)) {
-      penalty += 15;
+      penalty += 40;
       reasons.push('Repeated characters');
     }
 

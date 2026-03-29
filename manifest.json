@@ -29,9 +29,7 @@
         "https://*.bilibili.com/*"
       ],
       "js": [
-        "content/dom-observer.js",
-        "content/video-scorer.js",
-        "content/comment-filter.js"
+        "dist/content-bundle.js"
       ],
       "css": [
         "styles/content.css"
