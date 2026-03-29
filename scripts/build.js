@@ -4,6 +4,7 @@
  * Copies source files to dist/
  */
 
+const { spawnSync } = require('child_process');
 const fs = require('fs');
 const path = require('path');
 
@@ -36,6 +37,46 @@ function copyDir(src, dest) {
       copyFile(srcPath, destPath);
     }
   }
+}
+
+function runContentBundleBuild() {
+  console.log('\nBundling content script:');
+
+  const result = spawnSync(process.execPath, [path.join(SRC_DIR, 'esbuild.config.mjs')], {
+    cwd: SRC_DIR,
+    env: process.env,
+    stdio: 'inherit'
+  });
+
+  if (result.status !== 0) {
+    throw new Error(`Content bundle build failed with exit code ${result.status}`);
+  }
+
+  const bundledPath = path.join(DIST_DIR, 'content-bundle.js');
+  if (!fs.existsSync(bundledPath)) {
+    throw new Error('Content bundle build completed without creating dist/content-bundle.js');
+  }
+}
+
+function rewritePackagedManifest() {
+  const manifestPath = path.join(DIST_DIR, 'manifest.json');
+  const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
+
+  for (const contentScript of manifest.content_scripts || []) {
+    if (!Array.isArray(contentScript.js)) {
+      continue;
+    }
+
+    contentScript.js = contentScript.js.map((scriptPath) => {
+      if (scriptPath.startsWith('dist/')) {
+        return scriptPath.slice('dist/'.length);
+      }
+      return scriptPath;
+    });
+  }
+
+  fs.writeFileSync(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`, 'utf8');
+  console.log('  ✓ manifest.json (packaged content script paths normalized)');
 }
 
 function build() {
@@ -71,6 +112,9 @@ function build() {
       copyDir(srcDir, destDir);
     }
   }
+
+  runContentBundleBuild();
+  rewritePackagedManifest();
   
   console.log('\n✅ Build completed!');
   console.log(`   Output: ${DIST_DIR}`);

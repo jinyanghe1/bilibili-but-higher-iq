@@ -14,9 +14,11 @@ const REQUIRED_FILES = [
   'content/dom-observer.js',
   'content/video-scorer.js',
   'content/comment-filter.js',
+  'ml/sentiment-analyzer.js',
   'storage/blocklist-manager.js',
   'styles/content.css',
   'utils/constants.js',
+  'utils/shadow-dom-utils.js',
   'ui/popup/popup.html',
   'ui/popup/popup.js',
   'ui/popup/popup.css',
@@ -24,7 +26,8 @@ const REQUIRED_FILES = [
   'ui/options/options.js',
   'ui/options/options.css',
   'icons/icon-48.png',
-  'icons/icon-128.png'
+  'icons/icon-128.png',
+  'icons/icon.svg'
 ];
 
 const REQUIRED_LOCALES = ['en', 'zh-CN'];
@@ -41,6 +44,47 @@ function fileExists(filePath) {
 function readJson(filePath) {
   const content = fs.readFileSync(filePath, 'utf8');
   return JSON.parse(content);
+}
+
+function collectManifestPaths(manifest) {
+  const paths = new Set();
+
+  if (manifest.background?.service_worker) {
+    paths.add(manifest.background.service_worker);
+  }
+
+  for (const contentScript of manifest.content_scripts || []) {
+    for (const scriptPath of contentScript.js || []) {
+      paths.add(scriptPath);
+    }
+    for (const stylePath of contentScript.css || []) {
+      paths.add(stylePath);
+    }
+  }
+
+  if (manifest.action?.default_popup) {
+    paths.add(manifest.action.default_popup);
+  }
+
+  for (const iconPath of Object.values(manifest.icons || {})) {
+    paths.add(iconPath);
+  }
+
+  for (const iconPath of Object.values(manifest.action?.default_icon || {})) {
+    paths.add(iconPath);
+  }
+
+  if (manifest.options_ui?.page) {
+    paths.add(manifest.options_ui.page);
+  }
+
+  for (const resourceGroup of manifest.web_accessible_resources || []) {
+    for (const resourcePath of resourceGroup.resources || []) {
+      paths.add(resourcePath);
+    }
+  }
+
+  return [...paths];
 }
 
 async function validate() {
@@ -108,6 +152,17 @@ async function validate() {
         console.log(`  ✓ permission: ${perm}`);
       } else {
         console.log(`  ✗ permission: ${perm} (MISSING)`);
+        hasErrors = true;
+      }
+    }
+
+    console.log('\nChecking manifest-linked assets:');
+    for (const linkedPath of collectManifestPaths(manifest)) {
+      const exists = fileExists(path.join(SRC_DIR, linkedPath));
+      if (exists) {
+        console.log(`  ✓ ${linkedPath}`);
+      } else {
+        console.log(`  ✗ ${linkedPath} (MISSING referenced asset)`);
         hasErrors = true;
       }
     }

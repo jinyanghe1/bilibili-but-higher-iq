@@ -317,12 +317,159 @@ async function exportData() {
       a.download = `bqf-export-${new Date().toISOString().split('T')[0]}.json`;
       a.click();
       URL.revokeObjectURL(url);
-      showToast('Data exported!', 'success');
+      showToast('Data exported successfully!', 'success');
     }
   } catch (error) {
     console.error('[BQF] Failed to export data:', error);
-    showToast('Failed to export data', 'error');
+    showToast('Failed to export data: ' + error.message, 'error');
   }
+}
+
+/**
+ * Validate import data format
+ * @param {Object} data - Parsed JSON data
+ * @returns {Object} Validation result
+ */
+function validateImportData(data) {
+  if (!data || typeof data !== 'object') {
+    return { valid: false, error: 'Invalid file format' };
+  }
+
+  // Check version (optional but recommended)
+  if (data.version && typeof data.version !== 'string') {
+    return { valid: false, error: 'Invalid version format' };
+  }
+
+  // Validate keywords if present
+  if (data.keywords) {
+    if (!Array.isArray(data.keywords)) {
+      return { valid: false, error: 'Keywords must be an array' };
+    }
+    for (const kw of data.keywords) {
+      if (!kw.keyword || typeof kw.keyword !== 'string') {
+        return { valid: false, error: 'Invalid keyword format' };
+      }
+    }
+  }
+
+  // Validate user blocklist if present
+  if (data.userBlocklist) {
+    if (!Array.isArray(data.userBlocklist)) {
+      return { valid: false, error: 'User blocklist must be an array' };
+    }
+    for (const user of data.userBlocklist) {
+      if (!user.uid || typeof user.uid !== 'string') {
+        return { valid: false, error: 'Invalid user blocklist format' };
+      }
+    }
+  }
+
+  return { valid: true };
+}
+
+/**
+ * Show import confirmation dialog
+ * @param {Object} data - Import data preview
+ * @returns {Promise<boolean>} User confirmed
+ */
+function showImportConfirmDialog(data) {
+  return new Promise((resolve) => {
+    const keywordCount = data.keywords?.length || 0;
+    const userCount = data.userBlocklist?.length || 0;
+
+    // Create modal overlay
+    const overlay = document.createElement('div');
+    overlay.className = 'bqf-import-dialog-overlay';
+    overlay.style.cssText = `
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.5);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 999999;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    `;
+
+    const dialog = document.createElement('div');
+    dialog.className = 'bqf-import-dialog';
+    dialog.style.cssText = `
+      background: white;
+      border-radius: 12px;
+      padding: 24px;
+      max-width: 400px;
+      width: 90%;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    `;
+
+    dialog.innerHTML = `
+      <h3 style="margin: 0 0 16px 0; font-size: 18px; font-weight: 600; color: #333;">
+        Import Data?
+      </h3>
+      <p style="margin: 0 0 16px 0; font-size: 14px; color: #666; line-height: 1.5;">
+        This will import the following data:
+      </p>
+      <div style="background: #f5f5f5; border-radius: 8px; padding: 12px; margin-bottom: 20px;">
+        <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+          <span style="font-size: 14px; color: #333;">Keywords:</span>
+          <span style="font-size: 14px; font-weight: 500; color: #333;">${keywordCount}</span>
+        </div>
+        <div style="display: flex; justify-content: space-between;">
+          <span style="font-size: 14px; color: #333;">Blocked Users:</span>
+          <span style="font-size: 14px; font-weight: 500; color: #333;">${userCount}</span>
+        </div>
+      </div>
+      <p style="margin: 0 0 20px 0; font-size: 13px; color: #999;">
+        Existing data will be merged with new data.
+      </p>
+      <div style="display: flex; gap: 12px; justify-content: flex-end;">
+        <button id="cancelImport" style="
+          padding: 10px 20px;
+          border: 1px solid #ddd;
+          background: white;
+          border-radius: 6px;
+          cursor: pointer;
+          font-size: 14px;
+          color: #666;
+        ">Cancel</button>
+        <button id="confirmImport" style="
+          padding: 10px 20px;
+          border: none;
+          background: #fb7299;
+          border-radius: 6px;
+          cursor: pointer;
+          font-size: 14px;
+          color: white;
+          font-weight: 500;
+        ">Import</button>
+      </div>
+    `;
+
+    overlay.appendChild(dialog);
+    document.body.appendChild(overlay);
+
+    // Event listeners
+    dialog.querySelector('#cancelImport').addEventListener('click', () => {
+      document.body.removeChild(overlay);
+      resolve(false);
+    });
+
+    dialog.querySelector('#confirmImport').addEventListener('click', () => {
+      document.body.removeChild(overlay);
+      resolve(true);
+    });
+
+    // Close on overlay click
+    overlay.addEventListener('click', (e) => {
+      if (e.target === overlay) {
+        document.body.removeChild(overlay);
+        resolve(false);
+      }
+    });
+  });
 }
 
 /**
@@ -331,21 +478,51 @@ async function exportData() {
 async function importData(file) {
   try {
     const text = await file.text();
-    const data = JSON.parse(text);
+    let data;
     
-    await chrome.runtime.sendMessage({
+    try {
+      data = JSON.parse(text);
+    } catch (parseError) {
+      showToast('Invalid JSON file', 'error');
+      return;
+    }
+
+    // Validate data format
+    const validation = validateImportData(data);
+    if (!validation.valid) {
+      showToast('Invalid file format: ' + validation.error, 'error');
+      return;
+    }
+
+    // Show confirmation dialog
+    const confirmed = await showImportConfirmDialog(data);
+    if (!confirmed) {
+      return;
+    }
+
+    // Perform import
+    const response = await chrome.runtime.sendMessage({
       type: 'IMPORT_DATA',
       data
     });
 
-    await loadSettings();
-    await loadKeywords();
-    await loadBlocklist();
-    await loadStats();
-    showToast('Data imported!', 'success');
+    if (response.success) {
+      await loadSettings();
+      await loadKeywords();
+      await loadBlocklist();
+      await loadStats();
+      showToast('Data imported successfully!', 'success');
+    } else {
+      showToast('Import failed: ' + (response.error || 'Unknown error'), 'error');
+    }
   } catch (error) {
     console.error('[BQF] Failed to import data:', error);
-    showToast('Failed to import data', 'error');
+    showToast('Failed to import data: ' + error.message, 'error');
+  } finally {
+    // Reset file input
+    if (elements.importFile) {
+      elements.importFile.value = '';
+    }
   }
 }
 

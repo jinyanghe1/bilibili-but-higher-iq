@@ -42,6 +42,10 @@ function countLines(filePath) {
   }
 }
 
+function readJson(filePath) {
+  return JSON.parse(fs.readFileSync(path.join(SRC_DIR, filePath), 'utf8'));
+}
+
 // 1. Core files check
 console.log('Core Files:');
 check('manifest.json exists', fileExists('manifest.json'));
@@ -81,6 +85,7 @@ check('Locales exist',
   fileExists('_locales/en/messages.json') && 
   fileExists('_locales/zh-CN/messages.json')
 );
+check('Bundled content script exists', fileExists('dist/content-bundle.js'), 'run npm run build');
 
 // 4. Code metrics
 console.log('\nCode Metrics:');
@@ -112,7 +117,26 @@ check('TESTING.md exists', fileExists('TESTING.md'));
 check('LICENSE exists', fileExists('LICENSE'));
 check('Code review exists', fileExists('.agentstalk/CODE_REVIEW_2026-03-29.md'));
 
-// 7. Task status check
+// 7. Packaged build check
+console.log('\nPackaged Build:');
+if (check('dist/manifest.json exists', fileExists('dist/manifest.json'), 'run npm run build')) {
+  try {
+    const distManifest = readJson('dist/manifest.json');
+    const missingAssets = (distManifest.content_scripts || [])
+      .flatMap((contentScript) => contentScript.js || [])
+      .filter((scriptPath) => !fileExists(path.join('dist', scriptPath)));
+
+    check(
+      'Packaged content script paths resolve',
+      missingAssets.length === 0,
+      missingAssets.join(', ') || 'missing content script asset'
+    );
+  } catch (error) {
+    check('dist/manifest.json is valid JSON', false, error.message);
+  }
+}
+
+// 8. Task status check
 console.log('\nTask Status:');
 try {
   const taskBoard = JSON.parse(
