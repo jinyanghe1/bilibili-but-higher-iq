@@ -1,0 +1,124 @@
+{
+  "version": "0.1.0",
+  "lastUpdated": "2026-03-29",
+  "tasks": [
+    {
+      "id": "001",
+      "title": "Create extension directory structure",
+      "status": "DONE",
+      "files": ["manifest.json", "_locales/*", "background/", "content/", "storage/", "ui/", "styles/", "utils/"],
+      "agent": "claude",
+      "completedAt": "2026-03-29"
+    },
+    {
+      "id": "002",
+      "title": "Implement manifest.json (Manifest V3)",
+      "status": "DONE",
+      "files": ["manifest.json"],
+      "agent": "claude",
+      "completedAt": "2026-03-29"
+    },
+    {
+      "id": "003",
+      "title": "Implement utils/constants.js",
+      "status": "DONE",
+      "files": ["utils/constants.js"],
+      "agent": "claude",
+      "completedAt": "2026-03-29"
+    },
+    {
+      "id": "004",
+      "title": "Implement storage/blocklist-manager.js",
+      "status": "DONE",
+      "files": ["storage/blocklist-manager.js"],
+      "agent": "claude",
+      "completedAt": "2026-03-29"
+    },
+    {
+      "id": "005",
+      "title": "Implement content/video-scorer.js",
+      "status": "DONE",
+      "files": ["content/video-scorer.js"],
+      "agent": "claude",
+      "completedAt": "2026-03-29"
+    },
+    {
+      "id": "006",
+      "title": "Implement content/comment-filter.js",
+      "status": "DONE",
+      "files": ["content/comment-filter.js"],
+      "agent": "claude",
+      "completedAt": "2026-03-29"
+    },
+    {
+      "id": "007",
+      "title": "Implement content/dom-observer.js",
+      "status": "DONE",
+      "files": ["content/dom-observer.js"],
+      "agent": "claude",
+      "completedAt": "2026-03-29"
+    },
+    {
+      "id": "008",
+      "title": "Implement background/service-worker.js",
+      "status": "DONE",
+      "files": ["background/service-worker.js"],
+      "agent": "claude",
+      "completedAt": "2026-03-29"
+    },
+    {
+      "id": "009",
+      "title": "Implement UI/popup (popup.html, popup.js, popup.css)",
+      "status": "DONE",
+      "files": ["ui/popup/popup.html", "ui/popup/popup.js", "ui/popup/popup.css"],
+      "agent": "claude",
+      "completedAt": "2026-03-29"
+    },
+    {
+      "id": "010",
+      "title": "Implement UI/options (options.html, options.js, options.css)",
+      "status": "DONE",
+      "files": ["ui/options/options.html", "ui/options/options.js", "ui/options/options.css"],
+      "agent": "claude",
+      "completedAt": "2026-03-29"
+    },
+    {
+      "id": "011",
+      "title": "Create styles/content.css",
+      "status": "DONE",
+      "files": ["styles/content.css"],
+      "agent": "claude",
+      "completedAt": "2026-03-29"
+    },
+    {
+      "id": "012",
+      "title": "Create extension icons",
+      "status": "DONE",
+      "files": ["icons/icon-48.png", "icons/icon-128.png", "icons/icon.svg"],
+      "agent": "claude",
+      "completedAt": "2026-03-29"
+    },
+    {
+      "id": "013",
+      "title": "Test extension on Bilibili",
+      "status": "TODO",
+      "files": [],
+      "agent": null,
+      "dependsOn": ["007", "008", "009", "010", "011", "012"]
+    }
+  ],
+  "milestones": {
+    "v0.1.0": {
+      "name": "MVP Release",
+      "tasks": ["001", "002", "003", "004", "005", "006", "007", "008", "009", "010", "011", "012"],
+      "target": "2026-04-15",
+      "status": "COMPLETED"
+    },
+    "v0.2.0": {
+      "name": "ML Enhancement",
+      "tasks": ["ml/sentiment-analyzer.js"],
+      "target": "2026-05-01",
+      "status": "PLANNED"
+    }
+  }
+}

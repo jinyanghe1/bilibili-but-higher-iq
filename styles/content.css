@@ -1,0 +1,233 @@
+/* Bilibili Quality Filter - Content Styles */
+
+/* ============================================
+   Video Card Styles
+   ============================================ */
+
+/* Hidden video card */
+.bqf-video-hidden {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+
+/* Dimmed video card (low quality) */
+.bqf-video-dimmed {
+  opacity: 0.4 !important;
+  filter: grayscale(60%) !important;
+  transition: opacity 0.2s ease, filter 0.2s ease !important;
+}
+
+.bqf-video-dimmed:hover {
+  opacity: 0.7 !important;
+  filter: grayscale(30%) !important;
+}
+
+/* Quality badge */
+.bqf-badge {
+  display: inline-block;
+  background: #ff4757 !important;
+  color: white !important;
+  font-size: 10px !important;
+  padding: 2px 6px !important;
+  border-radius: 3px !important;
+  margin-left: 6px !important;
+  vertical-align: middle !important;
+  white-space: nowrap !important;
+  font-weight: 500 !important;
+  line-height: 1.4 !important;
+}
+
+/* ============================================
+   Comment Styles
+   ============================================ */
+
+/* Hidden comment */
+.bqf-comment-hidden {
+  background: #f8f9fa !important;
+  border-left: 3px solid #ff4757 !important;
+  padding: 8px 12px !important;
+  margin: 4px 0 !important;
+  border-radius: 0 4px 4px 0 !important;
+}
+
+.bqf-comment-hidden .comment-content,
+.bqf-comment-hidden .text,
+.bqf-comment-hidden .content {
+  display: none !important;
+}
+
+/* Shown comment (user expanded) */
+.bqf-comment-shown {
+  background: transparent !important;
+  border-left: none !important;
+}
+
+.bqf-comment-shown .comment-content,
+.bqf-comment-shown .text,
+.bqf-comment-shown .content {
+  display: block !important;
+}
+
+/* Comment hidden reason text */
+.bqf-comment-reason {
+  color: #666 !important;
+  font-size: 12px !important;
+  font-style: italic !important;
+  margin-bottom: 8px !important;
+}
+
+/* Comment warning indicator */
+.bqf-comment-warning {
+  color: #ffa502 !important;
+  margin-left: 4px !important;
+  font-size: 14px !important;
+  cursor: help !important;
+}
+
+/* ============================================
+   Button Styles
+   ============================================ */
+
+/* Show anyway button */
+.bqf-show-anyway-btn {
+  background: #e8e8e8 !important;
+  border: 1px solid #ccc !important;
+  border-radius: 4px !important;
+  padding: 4px 12px !important;
+  font-size: 12px !important;
+  color: #333 !important;
+  cursor: pointer !important;
+  transition: background 0.2s ease !important;
+  margin-top: 6px !important;
+}
+
+.bqf-show-anyway-btn:hover {
+  background: #ddd !important;
+}
+
+.bqf-show-anyway-btn:active {
+  background: #ccc !important;
+}
+
+/* Block user button */
+.bqf-block-user-btn {
+  background: #ff6b6b !important;
+  border: 1px solid #ee5a5a !important;
+  border-radius: 4px !important;
+  padding: 4px 12px !important;
+  font-size: 12px !important;
+  color: white !important;
+  cursor: pointer !important;
+  transition: background 0.2s ease !important;
+  margin-top: 6px !important;
+  margin-left: 8px !important;
+}
+
+.bqf-block-user-btn:hover {
+  background: #ee5a5a !important;
+}
+
+.bqf-block-user-btn:active {
+  background: #dc4848 !important;
+}
+
+/* ============================================
+   Animation Styles
+   ============================================ */
+
+/* Fade in animation for filtered content */
+@keyframes bqf-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.bqf-fade-in {
+  animation: bqf-fade-in 0.3s ease;
+}
+
+/* Slide down animation for expanded comments */
+@keyframes bqf-slide-down {
+  from {
+    opacity: 0;
+    max-height: 0;
+  }
+  to {
+    opacity: 1;
+    max-height: 500px;
+  }
+}
+
+.bqf-comment-shown .comment-content,
+.bqf-comment-shown .text,
+.bqf-comment-shown .content {
+  animation: bqf-slide-down 0.3s ease;
+}
+
+/* ============================================
+   Dark Mode Support
+   ============================================ */
+
+@media (prefers-color-scheme: dark) {
+  .bqf-comment-hidden {
+    background: #2a2a2a !important;
+    border-left-color: #ff4757 !important;
+  }
+
+  .bqf-comment-reason {
+    color: #999 !important;
+  }
+
+  .bqf-show-anyway-btn {
+    background: #3a3a3a !important;
+    border-color: #555 !important;
+    color: #ddd !important;
+  }
+
+  .bqf-show-anyway-btn:hover {
+    background: #444 !important;
+  }
+}
+
+/* ============================================
+   Utility Classes
+   ============================================ */
+
+/* Prevent layout shift when hiding */
+.bqf-layout-preserve {
+  min-height: 0 !important;
+  height: 0 !important;
+  overflow: hidden !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+/* Loading state */
+.bqf-loading {
+  position: relative !important;
+  pointer-events: none !important;
+}
+
+.bqf-loading::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 20px;
+  height: 20px;
+  margin: -10px 0 0 -10px;
+  border: 2px solid #f3f3f3;
+  border-top: 2px solid #3498db;
+  border-radius: 50%;
+  animation: bqf-spin 1s linear infinite;
+}
+
+@keyframes bqf-spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}

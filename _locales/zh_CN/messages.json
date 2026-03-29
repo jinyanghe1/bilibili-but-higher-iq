@@ -1,0 +1,86 @@
+{
+  "extName": {
+    "message": "B站质量过滤器",
+    "description": "扩展名称"
+  },
+  "extDescription": {
+    "message": "过滤B站上的低质量内容，包括引战标题党、搬运抄袭和恶意评论",
+    "description": "扩展描述"
+  },
+  "popupTitle": {
+    "message": "质量过滤",
+    "description": "弹窗标题"
+  },
+  "enabledLabel": {
+    "message": "过滤已启用",
+    "description": "开关标签"
+  },
+  "rageBaitLabel": {
+    "message": "屏蔽引战内容",
+    "description": "引战内容过滤标签"
+  },
+  "clickbaitLabel": {
+    "message": "屏蔽标题党",
+    "description": "标题党过滤标签"
+  },
+  "homogenizedLabel": {
+    "message": "屏蔽同质化内容",
+    "description": "同质化内容过滤标签"
+  },
+  "commentFilterLabel": {
+    "message": "过滤评论",
+    "description": "评论过滤标签"
+  },
+  "openOptions": {
+    "message": "打开设置",
+    "description": "打开设置页面按钮"
+  },
+  "showAnyway": {
+    "message": "仍然显示",
+    "description": "显示被隐藏内容的按钮"
+  },
+  "blockUser": {
+    "message": "屏蔽用户",
+    "description": "屏蔽用户按钮"
+  },
+  "blocked": {
+    "message": "已屏蔽",
+    "description": "已屏蔽内容标签"
+  },
+  "scoreWarning": {
+    "message": "低质量",
+    "description": "低质量内容警告标签"
+  },
+  "optionsTitle": {
+    "message": "B站质量过滤器设置",
+    "description": "设置页面标题"
+  },
+  "blocklistManagement": {
+    "message": "黑名单管理",
+    "description": "黑名单管理区块标题"
+  },
+  "userBlocklist": {
+    "message": "用户黑名单",
+    "description": "用户黑名单区块标题"
+  },
+  "exportBlocklist": {
+    "message": "导出黑名单",
+    "description": "导出按钮标签"
+  },
+  "importBlocklist": {
+    "message": "导入黑名单",
+    "description": "导入按钮标签"
+  },
+  "clearAll": {
+    "message": "清除全部",
+    "description": "清除全部数据按钮"
+  },
+  "saveSettings": {
+    "message": "保存设置",
+    "description": "保存设置按钮"
+  },
+  "settingsSaved": {
+    "message": "设置已保存！",
+    "description": "设置保存成功提示"
+  }
+}

@@ -1,0 +1,194 @@
+{
+  "extName": {
+    "message": "B站智能过滤器",
+    "description": "Extension name"
+  },
+  "extDescription": {
+    "message": "过滤B站低质量内容，包括引战视频、标题党和垃圾评论",
+    "description": "Extension description"
+  },
+  "popupTitle": {
+    "message": "质量过滤器",
+    "description": "Popup title"
+  },
+  "enableFilter": {
+    "message": "启用过滤",
+    "description": "Main toggle label"
+  },
+  "enableFilterDesc": {
+    "message": "开启/关闭B站内容质量过滤",
+    "description": "Main toggle description"
+  },
+  "filterOptions": {
+    "message": "过滤选项",
+    "description": "Filter options section title"
+  },
+  "rageBait": {
+    "message": "引战内容",
+    "description": "Rage bait filter label"
+  },
+  "rageBaitDesc": {
+    "message": "过滤煽动性和引战内容",
+    "description": "Rage bait filter description"
+  },
+  "clickbait": {
+    "message": "标题党",
+    "description": "Clickbait filter label"
+  },
+  "clickbaitDesc": {
+    "message": "过滤耸人听闻和误导性标题",
+    "description": "Clickbait filter description"
+  },
+  "homogenized": {
+    "message": "同质化",
+    "description": "Homogenized content filter label"
+  },
+  "homogenizedDesc": {
+    "message": "过滤重复和缺乏原创性的内容",
+    "description": "Homogenized filter description"
+  },
+  "filterComments": {
+    "message": "过滤评论",
+    "description": "Comment filter label"
+  },
+  "filterCommentsDesc": {
+    "message": "基于内容模式过滤低质量评论",
+    "description": "Comment filter description"
+  },
+  "displayOptions": {
+    "message": "显示选项",
+    "description": "Display options section title"
+  },
+  "dimInsteadOfHide": {
+    "message": "淡化而非隐藏",
+    "description": "Dim mode toggle"
+  },
+  "dimInsteadOfHideDesc": {
+    "message": "以降低透明度的方式显示低质量内容",
+    "description": "Dim mode description"
+  },
+  "autoCollapseComments": {
+    "message": "自动折叠评论",
+    "description": "Auto collapse toggle"
+  },
+  "autoCollapseCommentsDesc": {
+    "message": "自动折叠被过滤的评论",
+    "description": "Auto collapse description"
+  },
+  "showBlockUserButton": {
+    "message": "显示屏蔽用户按钮",
+    "description": "Block user button toggle"
+  },
+  "showBlockUserButtonDesc": {
+    "message": "在评论上添加屏蔽用户按钮",
+    "description": "Block user button description"
+  },
+  "statistics": {
+    "message": "统计信息",
+    "description": "Statistics section title"
+  },
+  "blockedKeywords": {
+    "message": "屏蔽关键词：",
+    "description": "Blocked keywords label"
+  },
+  "blockedUsers": {
+    "message": "屏蔽用户：",
+    "description": "Blocked users label"
+  },
+  "totalKeywords": {
+    "message": "关键词总数",
+    "description": "Total keywords stat"
+  },
+  "version": {
+    "message": "版本",
+    "description": "Version label"
+  },
+  "openOptions": {
+    "message": "打开设置",
+    "description": "Open options page button"
+  },
+  "optionsTitle": {
+    "message": "B站智能过滤器 - 设置",
+    "description": "Options page title"
+  },
+  "generalSettings": {
+    "message": "常规",
+    "description": "General settings tab"
+  },
+  "filterSettings": {
+    "message": "过滤器",
+    "description": "Filter settings tab"
+  },
+  "keywordSettings": {
+    "message": "关键词",
+    "description": "Keyword settings tab"
+  },
+  "blocklistSettings": {
+    "message": "黑名单",
+    "description": "Blocklist settings tab"
+  },
+  "dataSettings": {
+    "message": "数据",
+    "description": "Data settings tab"
+  },
+  "videoFilters": {
+    "message": "视频过滤器",
+    "description": "Video filters section"
+  },
+  "commentFilters": {
+    "message": "评论过滤器",
+    "description": "Comment filters section"
+  },
+  "addKeyword": {
+    "message": "添加自定义关键词",
+    "description": "Add keyword section"
+  },
+  "add": {
+    "message": "添加",
+    "description": "Add button"
+  },
+  "existingKeywords": {
+    "message": "已有关键词",
+    "description": "Existing keywords section"
+  },
+  "noBlockedUsers": {
+    "message": "暂无屏蔽用户",
+    "description": "Empty blocklist message"
+  },
+  "exportImport": {
+    "message": "导出与导入",
+    "description": "Export/Import section"
+  },
+  "exportImportDesc": {
+    "message": "备份或恢复您的过滤器设置和黑名单",
+    "description": "Export/Import description"
+  },
+  "exportData": {
+    "message": "导出数据",
+    "description": "Export button"
+  },
+  "importData": {
+    "message": "导入数据",
+    "description": "Import button"
+  },
+  "dangerZone": {
+    "message": "危险区域",
+    "description": "Danger zone section"
+  },
+  "clearAllDesc": {
+    "message": "清除所有数据，包括关键词、黑名单和设置",
+    "description": "Clear all description"
+  },
+  "clearAll": {
+    "message": "清除所有数据",
+    "description": "Clear all button"
+  },
+  "showAnyway": {
+    "message": "仍然显示",
+    "description": "Button to show hidden content"
+  },
+  "blockUser": {
+    "message": "屏蔽用户",
+    "description": "Button to block a user"
+  }
+}

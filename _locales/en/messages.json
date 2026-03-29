@@ -1,0 +1,194 @@
+{
+  "extName": {
+    "message": "Bilibili Quality Filter",
+    "description": "Extension name"
+  },
+  "extDescription": {
+    "message": "Filter low-quality content on Bilibili including rage bait, clickbait, and toxic comments",
+    "description": "Extension description"
+  },
+  "popupTitle": {
+    "message": "Quality Filter",
+    "description": "Popup title"
+  },
+  "enableFilter": {
+    "message": "Enable Filter",
+    "description": "Main toggle label"
+  },
+  "enableFilterDesc": {
+    "message": "Turn on/off the quality filter for Bilibili",
+    "description": "Main toggle description"
+  },
+  "filterOptions": {
+    "message": "Filter Options",
+    "description": "Filter options section title"
+  },
+  "rageBait": {
+    "message": "Rage Bait",
+    "description": "Rage bait filter label"
+  },
+  "rageBaitDesc": {
+    "message": "Filter provocative and inflammatory content",
+    "description": "Rage bait filter description"
+  },
+  "clickbait": {
+    "message": "Clickbait",
+    "description": "Clickbait filter label"
+  },
+  "clickbaitDesc": {
+    "message": "Filter sensational and misleading titles",
+    "description": "Clickbait filter description"
+  },
+  "homogenized": {
+    "message": "Homogenized",
+    "description": "Homogenized content filter label"
+  },
+  "homogenizedDesc": {
+    "message": "Filter repetitive and unoriginal content",
+    "description": "Homogenized filter description"
+  },
+  "filterComments": {
+    "message": "Filter Comments",
+    "description": "Comment filter label"
+  },
+  "filterCommentsDesc": {
+    "message": "Filter low-quality comments based on content patterns",
+    "description": "Comment filter description"
+  },
+  "displayOptions": {
+    "message": "Display Options",
+    "description": "Display options section title"
+  },
+  "dimInsteadOfHide": {
+    "message": "Dim Instead of Hide",
+    "description": "Dim mode toggle"
+  },
+  "dimInsteadOfHideDesc": {
+    "message": "Show low-quality content with reduced opacity",
+    "description": "Dim mode description"
+  },
+  "autoCollapseComments": {
+    "message": "Auto Collapse Comments",
+    "description": "Auto collapse toggle"
+  },
+  "autoCollapseCommentsDesc": {
+    "message": "Automatically collapse filtered comments",
+    "description": "Auto collapse description"
+  },
+  "showBlockUserButton": {
+    "message": "Show Block User Button",
+    "description": "Block user button toggle"
+  },
+  "showBlockUserButtonDesc": {
+    "message": "Add a block user button to comments",
+    "description": "Block user button description"
+  },
+  "statistics": {
+    "message": "Statistics",
+    "description": "Statistics section title"
+  },
+  "blockedKeywords": {
+    "message": "Blocked Keywords:",
+    "description": "Blocked keywords label"
+  },
+  "blockedUsers": {
+    "message": "Blocked Users:",
+    "description": "Blocked users label"
+  },
+  "totalKeywords": {
+    "message": "Total Keywords",
+    "description": "Total keywords stat"
+  },
+  "version": {
+    "message": "Version",
+    "description": "Version label"
+  },
+  "openOptions": {
+    "message": "Open Settings",
+    "description": "Open options page button"
+  },
+  "optionsTitle": {
+    "message": "Bilibili Quality Filter - Settings",
+    "description": "Options page title"
+  },
+  "generalSettings": {
+    "message": "General",
+    "description": "General settings tab"
+  },
+  "filterSettings": {
+    "message": "Filters",
+    "description": "Filter settings tab"
+  },
+  "keywordSettings": {
+    "message": "Keywords",
+    "description": "Keyword settings tab"
+  },
+  "blocklistSettings": {
+    "message": "Blocklist",
+    "description": "Blocklist settings tab"
+  },
+  "dataSettings": {
+    "message": "Data",
+    "description": "Data settings tab"
+  },
+  "videoFilters": {
+    "message": "Video Filters",
+    "description": "Video filters section"
+  },
+  "commentFilters": {
+    "message": "Comment Filters",
+    "description": "Comment filters section"
+  },
+  "addKeyword": {
+    "message": "Add Custom Keyword",
+    "description": "Add keyword section"
+  },
+  "add": {
+    "message": "Add",
+    "description": "Add button"
+  },
+  "existingKeywords": {
+    "message": "Existing Keywords",
+    "description": "Existing keywords section"
+  },
+  "noBlockedUsers": {
+    "message": "No blocked users",
+    "description": "Empty blocklist message"
+  },
+  "exportImport": {
+    "message": "Export & Import",
+    "description": "Export/Import section"
+  },
+  "exportImportDesc": {
+    "message": "Backup or restore your filter settings and blocklist",
+    "description": "Export/Import description"
+  },
+  "exportData": {
+    "message": "Export Data",
+    "description": "Export button"
+  },
+  "importData": {
+    "message": "Import Data",
+    "description": "Import button"
+  },
+  "dangerZone": {
+    "message": "Danger Zone",
+    "description": "Danger zone section"
+  },
+  "clearAllDesc": {
+    "message": "Clear all data including keywords, blocklist, and settings",
+    "description": "Clear all description"
+  },
+  "clearAll": {
+    "message": "Clear All Data",
+    "description": "Clear all button"
+  },
+  "showAnyway": {
+    "message": "Show anyway",
+    "description": "Button to show hidden content"
+  },
+  "blockUser": {
+    "message": "Block User",
+    "description": "Button to block a user"
+  }
+}

@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title data-i18n="optionsTitle">Bilibili Quality Filter - Settings</title>
+  <link rel="stylesheet" href="options.css">
+</head>
+<body>
+  <div class="options-container">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <img src="../../icons/icon-48.png" alt="Logo" class="logo">
+        <h1 data-i18n="extName">Bilibili Quality Filter</h1>
+      </div>
+      <nav class="sidebar-nav">
+        <a href="#general" class="nav-item active" data-i18n="generalSettings">General</a>
+        <a href="#filters" class="nav-item" data-i18n="filterSettings">Filters</a>
+        <a href="#keywords" class="nav-item" data-i18n="keywordSettings">Keywords</a>
+        <a href="#blocklist" class="nav-item" data-i18n="blocklistSettings">Blocklist</a>
+        <a href="#data" class="nav-item" data-i18n="dataSettings">Data</a>
+      </nav>
+      <div class="sidebar-footer">
+        <span data-i18n="version">Version</span> 0.1.0
+      </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+      <!-- General Settings -->
+      <section id="general" class="content-section">
+        <h2 data-i18n="generalSettings">General Settings</h2>
+        
+        <div class="setting-card">
+          <div class="setting-header">
+            <h3 data-i18n="enableFilter">Enable Filter</h3>
+            <label class="toggle-switch">
+              <input type="checkbox" id="enabled">
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+          <p class="setting-desc" data-i18n="enableFilterDesc">
+            Turn on/off the quality filter for Bilibili
+          </p>
+        </div>
+
+        <div class="setting-card">
+          <div class="setting-header">
+            <h3 data-i18n="displayOptions">Display Options</h3>
+          </div>
+          
+          <label class="checkbox-item">
+            <input type="checkbox" id="dimInsteadOfHide">
+            <span class="checkmark"></span>
+            <span class="label">
+              <span data-i18n="dimInsteadOfHide">Dim Instead of Hide</span>
+              <small data-i18n="dimInsteadOfHideDesc">Show low-quality content with reduced opacity instead of hiding completely</small>
+            </span>
+          </label>
+
+          <label class="checkbox-item">
+            <input type="checkbox" id="autoCollapseComments">
+            <span class="checkmark"></span>
+            <span class="label">
+              <span data-i18n="autoCollapseComments">Auto Collapse Comments</span>
+              <small data-i18n="autoCollapseCommentsDesc">Automatically collapse filtered comments</small>
+            </span>
+          </label>
+
+          <label class="checkbox-item">
+            <input type="checkbox" id="showBlockUserButton">
+            <span class="checkmark"></span>
+            <span class="label">
+              <span data-i18n="showBlockUserButton">Show Block User Button</span>
+              <small data-i18n="showBlockUserButtonDesc">Add a block user button to comments</small>
+            </span>
+          </label>
+        </div>
+      </section>
+
+      <!-- Filter Settings -->
+      <section id="filters" class="content-section">
+        <h2 data-i18n="filterSettings">Filter Settings</h2>
+        
+        <div class="setting-card">
+          <div class="setting-header">
+            <h3 data-i18n="videoFilters">Video Filters</h3>
+          </div>
+          
+          <label class="checkbox-item">
+            <input type="checkbox" id="filterRageBait">
+            <span class="checkmark"></span>
+            <span class="label">
+              <span data-i18n="rageBait">Rage Bait</span>
+              <small data-i18n="rageBaitDesc">Filter provocative and inflammatory content</small>
+            </span>
+          </label>
+
+          <label class="checkbox-item">
+            <input type="checkbox" id="filterClickbait">
+            <span class="checkmark"></span>
+            <span class="label">
+              <span data-i18n="clickbait">Clickbait</span>
+              <small data-i18n="clickbaitDesc">Filter sensational and misleading titles</small>
+            </span>
+          </label>
+
+          <label class="checkbox-item">
+            <input type="checkbox" id="filterHomogenized">
+            <span class="checkmark"></span>
+            <span class="label">
+              <span data-i18n="homogenized">Homogenized Content</span>
+              <small data-i18n="homogenizedDesc">Filter repetitive and unoriginal content</small>
+            </span>
+          </label>
+        </div>
+
+        <div class="setting-card">
+          <div class="setting-header">
+            <h3 data-i18n="commentFilters">Comment Filters</h3>
+            <label class="toggle-switch">
+              <input type="checkbox" id="filterComments">
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+          <p class="setting-desc" data-i18n="filterCommentsDesc">
+            Filter low-quality comments based on content patterns
+          </p>
+        </div>
+      </section>
+
+      <!-- Keywords -->
+      <section id="keywords" class="content-section">
+        <h2 data-i18n="keywordSettings">Keyword Management</h2>
+        
+        <div class="setting-card">
+          <div class="setting-header">
+            <h3 data-i18n="addKeyword">Add Custom Keyword</h3>
+          </div>
+          <div class="form-row">
+            <input type="text" id="newKeyword" placeholder="Enter keyword" class="input-text">
+            <select id="keywordCategory" class="input-select">
+              <option value="rageBait" data-i18n="rageBait">Rage Bait</option>
+              <option value="clickbait" data-i18n="clickbait">Clickbait</option>
+              <option value="homogenized" data-i18n="homogenized">Homogenized</option>
+            </select>
+            <button id="addKeywordBtn" class="btn btn-primary" data-i18n="add">Add</button>
+          </div>
+        </div>
+
+        <div class="setting-card">
+          <div class="setting-header">
+            <h3 data-i18n="existingKeywords">Existing Keywords</h3>
+            <div class="tabs">
+              <button class="tab-btn active" data-category="rageBait" data-i18n="rageBait">Rage Bait</button>
+              <button class="tab-btn" data-category="clickbait" data-i18n="clickbait">Clickbait</button>
+              <button class="tab-btn" data-category="homogenized" data-i18n="homogenized">Homogenized</button>
+            </div>
+          </div>
+          <div id="keywordsList" class="keywords-list">
+            <!-- Keywords will be loaded here -->
+          </div>
+        </div>
+      </section>
+
+      <!-- Blocklist -->
+      <section id="blocklist" class="content-section">
+        <h2 data-i18n="blocklistSettings">User Blocklist</h2>
+        
+        <div class="setting-card">
+          <div class="setting-header">
+            <h3 data-i18n="blockedUsers">Blocked Users</h3>
+            <span id="blockedCount" class="badge">0</span>
+          </div>
+          <div id="blocklistContainer" class="blocklist-container">
+            <p class="empty-state" data-i18n="noBlockedUsers">No blocked users</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Data -->
+      <section id="data" class="content-section">
+        <h2 data-i18n="dataSettings">Data Management</h2>
+        
+        <div class="setting-card">
+          <div class="setting-header">
+            <h3 data-i18n="exportImport">Export & Import</h3>
+          </div>
+          <p class="setting-desc" data-i18n="exportImportDesc">
+            Backup or restore your filter settings and blocklist
+          </p>
+          <div class="button-group">
+            <button id="exportBtn" class="btn btn-secondary" data-i18n="exportData">Export Data</button>
+            <button id="importBtn" class="btn btn-secondary" data-i18n="importData">Import Data</button>
+            <input type="file" id="importFile" accept=".json" style="display: none;">
+          </div>
+        </div>
+
+        <div class="setting-card danger-zone">
+          <div class="setting-header">
+            <h3 data-i18n="dangerZone">Danger Zone</h3>
+          </div>
+          <p class="setting-desc" data-i18n="clearAllDesc">
+            Clear all data including keywords, blocklist, and settings
+          </p>
+          <button id="clearAllBtn" class="btn btn-danger" data-i18n="clearAll">Clear All Data</button>
+        </div>
+
+        <div class="setting-card">
+          <div class="setting-header">
+            <h3 data-i18n="statistics">Statistics</h3>
+          </div>
+          <div class="stats-grid">
+            <div class="stat-card">
+              <span class="stat-value" id="statKeywords">-</span>
+              <span class="stat-label" data-i18n="totalKeywords">Total Keywords</span>
+            </div>
+            <div class="stat-card">
+              <span class="stat-value" id="statBlocked">-</span>
+              <span class="stat-label" data-i18n="blockedUsers">Blocked Users</span>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- Toast Notification -->
+  <div id="toast" class="toast">
+    <span id="toastMessage"></span>
+  </div>
+
+  <script src="options.js" type="module"></script>
+</body>
+</html>

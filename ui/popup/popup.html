@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title data-i18n="extName">Bilibili Quality Filter</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div class="popup-container">
+    <!-- Header -->
+    <header class="popup-header">
+      <img src="../../icons/icon-48.png" alt="Logo" class="logo">
+      <h1 data-i18n="extName">Bilibili Quality Filter</h1>
+    </header>
+
+    <!-- Main Toggle -->
+    <section class="section main-toggle">
+      <label class="toggle-switch">
+        <input type="checkbox" id="enabled">
+        <span class="toggle-slider"></span>
+        <span class="toggle-label" data-i18n="enableFilter">Enable Filter</span>
+      </label>
+    </section>
+
+    <!-- Filter Options -->
+    <section class="section">
+      <h2 data-i18n="filterOptions">Filter Options</h2>
+      
+      <label class="checkbox-item">
+        <input type="checkbox" id="filterRageBait">
+        <span class="checkmark"></span>
+        <span class="label">
+          <span data-i18n="rageBait">Rage Bait</span>
+          <small data-i18n="rageBaitDesc">Filter provocative content</small>
+        </span>
+      </label>
+
+      <label class="checkbox-item">
+        <input type="checkbox" id="filterClickbait">
+        <span class="checkmark"></span>
+        <span class="label">
+          <span data-i18n="clickbait">Clickbait</span>
+          <small data-i18n="clickbaitDesc">Filter sensational titles</small>
+        </span>
+      </label>
+
+      <label class="checkbox-item">
+        <input type="checkbox" id="filterHomogenized">
+        <span class="checkmark"></span>
+        <span class="label">
+          <span data-i18n="homogenized">Homogenized</span>
+          <small data-i18n="homogenizedDesc">Filter repetitive content</small>
+        </span>
+      </label>
+
+      <label class="checkbox-item">
+        <input type="checkbox" id="filterComments">
+        <span class="checkmark"></span>
+        <span class="label">
+          <span data-i18n="filterComments">Filter Comments</span>
+          <small data-i18n="filterCommentsDesc">Filter low-quality comments</small>
+        </span>
+      </label>
+    </section>
+
+    <!-- Display Options -->
+    <section class="section">
+      <h2 data-i18n="displayOptions">Display Options</h2>
+      
+      <label class="checkbox-item">
+        <input type="checkbox" id="dimInsteadOfHide">
+        <span class="checkmark"></span>
+        <span class="label">
+          <span data-i18n="dimInsteadOfHide">Dim Instead of Hide</span>
+          <small data-i18n="dimInsteadOfHideDesc">Show low-quality content with reduced opacity</small>
+        </span>
+      </label>
+
+      <label class="checkbox-item">
+        <input type="checkbox" id="showBlockUserButton">
+        <span class="checkmark"></span>
+        <span class="label">
+          <span data-i18n="showBlockUserButton">Show Block User Button</span>
+          <small data-i18n="showBlockUserButtonDesc">Add block button to comments</small>
+        </span>
+      </label>
+    </section>
+
+    <!-- Stats -->
+    <section class="section stats">
+      <h2 data-i18n="statistics">Statistics</h2>
+      <div class="stat-row">
+        <span data-i18n="blockedKeywords">Blocked Keywords:</span>
+        <span id="keywordCount">-</span>
+      </div>
+      <div class="stat-row">
+        <span data-i18n="blockedUsers">Blocked Users:</span>
+        <span id="userCount">-</span>
+      </div>
+    </section>
+
+    <!-- Actions -->
+    <section class="section actions">
+      <button id="openOptions" class="btn btn-primary" data-i18n="openOptions">
+        Open Settings
+      </button>
+    </section>
+
+    <!-- Footer -->
+    <footer class="popup-footer">
+      <span data-i18n="version">Version</span> 0.1.0
+    </footer>
+  </div>
+
+  <script src="popup.js" type="module"></script>
+</body>
+</html>
