@@ -274,6 +274,28 @@
         "018"
       ],
       "note": "Prefer native navigation events over unconditional URL polling and align architecture.md with current Shadow DOM selectors/settings schema."
+    },
+    {
+      "id": "022",
+      "title": "Block user should immediately collapse comment",
+      "status": "TODO",
+      "files": [
+        "content/comment-filter.js"
+      ],
+      "description": "When clicking 'Block User' button, the comment should collapse/hide immediately without requiring page refresh. Currently the comment stays visible until next page load.",
+      "severity": "medium",
+      "dependsOn": []
+    },
+    {
+      "id": "023",
+      "title": "Low-quality comments should be hidden, not dimmed",
+      "status": "TODO",
+      "files": [
+        "content/comment-filter.js"
+      ],
+      "description": "Comments with spam patterns or low information density (even from non-blocked users) should be completely hidden instead of dimmed. The 'dimInsteadOfHide' setting only controls video dimming, not comment behavior. Comments that spam emojis, repeated chars, or have low-quality indicators should be hidden directly.",
+      "severity": "medium",
+      "dependsOn": []
     }
   ],
   "milestones": {
