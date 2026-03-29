@@ -16,6 +16,12 @@ const REFRESH_MESSAGE_TYPES = new Set([
   'BLOCKLIST_UPDATED',
   'USER_UNBLOCKED'
 ]);
+const CHARACTER_DATA_TARGET_SELECTOR = [
+  BILIBILI_SELECTORS.VIDEO_CARD,
+  BILIBILI_SELECTORS.COMMENT_HOST,
+  BILIBILI_SELECTORS.COMMENT_ITEM,
+  BILIBILI_SELECTORS.COMMENT_RENDERER
+].join(', ');
 
 class DOMObserver {
   constructor() {
@@ -37,10 +43,13 @@ class DOMObserver {
     this.processTimer = null;
     this.rescanTimer = null;
     this.urlPollTimer = null;
+    this.usesNavigationApi = false;
 
     this.boundHandleStorageChange = this.handleStorageChange.bind(this);
     this.boundHandleRuntimeMessage = this.handleRuntimeMessage.bind(this);
     this.boundHandleUrlChange = this.handlePotentialUrlChange.bind(this);
+    this.boundDispatchUrlChange = this.dispatchUrlChangeEvent.bind(this);
+    this.boundHandleBlockUser = this.handleBlockUserEvent.bind(this);
   }
 
   /**
@@ -58,6 +67,7 @@ class DOMObserver {
       this.setupUrlChangeListener();
       this.setupStorageListener();
       this.setupMessageListener();
+      this.setupBlockUserListener();
       this.startObserving();
       this.prepareForRescan();
       this.processExistingElements();
@@ -74,34 +84,42 @@ class DOMObserver {
    */
   setupUrlChangeListener() {
     if (!window[HISTORY_PATCH_FLAG]) {
-      const notifyUrlChange = () => {
-        window.dispatchEvent(new Event(URL_CHANGE_EVENT));
-      };
-
       const originalPushState = history.pushState;
       const originalReplaceState = history.replaceState;
 
       history.pushState = function (...args) {
         const result = originalPushState.apply(this, args);
-        notifyUrlChange();
+        window.dispatchEvent(new Event(URL_CHANGE_EVENT));
         return result;
       };
 
       history.replaceState = function (...args) {
         const result = originalReplaceState.apply(this, args);
-        notifyUrlChange();
+        window.dispatchEvent(new Event(URL_CHANGE_EVENT));
         return result;
       };
 
-      window.addEventListener('popstate', notifyUrlChange);
-      window.addEventListener('hashchange', notifyUrlChange);
+      window.addEventListener('popstate', this.boundDispatchUrlChange);
+      window.addEventListener('hashchange', this.boundDispatchUrlChange);
       window[HISTORY_PATCH_FLAG] = true;
     }
 
     window.addEventListener(URL_CHANGE_EVENT, this.boundHandleUrlChange);
+
+    if (typeof window.navigation?.addEventListener === 'function' &&
+        typeof window.navigation?.removeEventListener === 'function') {
+      window.navigation.addEventListener('currententrychange', this.boundHandleUrlChange);
+      this.usesNavigationApi = true;
+      return;
+    }
+
     this.urlPollTimer = window.setInterval(() => {
       this.handlePotentialUrlChange();
     }, 1000);
+  }
+
+  dispatchUrlChangeEvent() {
+    window.dispatchEvent(new Event(URL_CHANGE_EVENT));
   }
 
   /**
@@ -116,6 +134,57 @@ class DOMObserver {
    */
   setupMessageListener() {
     chrome.runtime?.onMessage?.addListener(this.boundHandleRuntimeMessage);
+  }
+
+  /**
+   * Setup block user event listener for immediate comment hiding
+   */
+  setupBlockUserListener() {
+    document.addEventListener('bqf:blockUser', this.boundHandleBlockUser);
+  }
+
+  /**
+   * Handle block user event - immediately hide the comment
+   */
+  handleBlockUserEvent(event) {
+    const { detail } = event;
+    if (!detail?.result) return;
+
+    if (detail.uid) {
+      this.hideAllContentFromUser(detail.uid);
+      return;
+    }
+
+    const commentEl = this.resolveCommentElementFromEvent(event);
+    if (!commentEl || !commentEl.isConnected) return;
+
+    // Reset and hide the comment immediately
+    this.resetComment(commentEl);
+    this.hideComment(commentEl, detail.result);
+    this.processedComments.add(commentEl);
+  }
+
+  resolveCommentElementFromEvent(event) {
+    const detailComment = event?.detail?.commentEl;
+    if (detailComment instanceof Element) {
+      return detailComment;
+    }
+
+    if (typeof event?.composedPath === 'function') {
+      const pathComment = event.composedPath().find((node) =>
+        node instanceof Element && node.matches?.(BILIBILI_SELECTORS.COMMENT_ITEM)
+      );
+      if (pathComment) {
+        return pathComment;
+      }
+    }
+
+    const target = event?.target;
+    if (target instanceof Element) {
+      return target.closest?.(BILIBILI_SELECTORS.COMMENT_ITEM) || target;
+    }
+
+    return null;
   }
 
   /**
@@ -344,9 +413,9 @@ class DOMObserver {
   handleMutations(mutations) {
     for (const mutation of mutations) {
       if (mutation.type === 'characterData') {
-        const parent = mutation.target?.parentElement;
-        if (parent) {
-          this.collectCandidates(parent);
+        const target = this.findRelevantCharacterDataTarget(mutation.target?.parentElement);
+        if (target) {
+          this.collectCandidates(target);
         }
         continue;
       }
@@ -361,6 +430,24 @@ class DOMObserver {
     }
 
     this.schedulePendingProcessing();
+  }
+
+  findRelevantCharacterDataTarget(element) {
+    let current = element instanceof Element ? element : null;
+
+    while (current) {
+      if (current.matches?.(CHARACTER_DATA_TARGET_SELECTOR)) {
+        return current;
+      }
+
+      if (current.parentNode instanceof ShadowRoot) {
+        current = current.parentNode.host;
+      } else {
+        current = current.parentElement;
+      }
+    }
+
+    return null;
   }
 
   collectMatchingDescendants(rootLike, selector, bucket) {
@@ -656,7 +743,8 @@ class DOMObserver {
       if (result.action === 'hide') {
         this.hideComment(commentEl, result);
       } else if (result.action === 'warn') {
-        this.warnComment(commentEl, result);
+        // Low-quality comments should be hidden directly, not dimmed
+        this.hideComment(commentEl, result);
       }
 
       if (result.action !== 'hide' && commentFilter.settings?.showBlockUserButton) {
@@ -901,6 +989,12 @@ class DOMObserver {
     chrome.runtime?.onMessage?.removeListener(this.boundHandleRuntimeMessage);
     chrome.storage?.onChanged?.removeListener(this.boundHandleStorageChange);
     window.removeEventListener(URL_CHANGE_EVENT, this.boundHandleUrlChange);
+    document.removeEventListener('bqf:blockUser', this.boundHandleBlockUser);
+
+    if (this.usesNavigationApi) {
+      window.navigation?.removeEventListener?.('currententrychange', this.boundHandleUrlChange);
+      this.usesNavigationApi = false;
+    }
 
     if (this.processTimer) {
       window.clearTimeout(this.processTimer);

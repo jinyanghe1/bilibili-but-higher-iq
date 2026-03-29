@@ -88,7 +88,43 @@ export const COMMENT_THRESHOLDS = {
 // ML configuration
 export const ML_CONFIG = {
   DEFAULT_TIMEOUT: 100,  // milliseconds
-  MODEL_NAME: 'Xenova/transformers-small'  // Lightweight sentiment model
+  MODEL_NAME: 'Xenova/transformers-small',  // Lightweight sentiment model
+
+  // Sentiment scoring parameters
+  CONFIDENCE_THRESHOLD: 0.6,  // Minimum confidence to trust prediction
+  NEUTRAL_SCORE: 50,         // Base score for neutral/uncertain predictions
+  POSITIVE_BOOST: 50,         // How much to boost positive scores (added to 50)
+  NEGATIVE_PENALTY: 50,      // How much to penalize negative scores (subtracted from 50)
+  USE_CONFIDENCE_WEIGHTING: true,  // Weight score by confidence level
+
+  // Available sentiment analysis models
+  AVAILABLE_MODELS: {
+    SMALL: 'Xenova/transformers-small',  // ~20MB, fast, English only
+    DISTILBERT: 'Xenova/distilbert-base-uncased-finetuned-sst-2-english',  // ~67MB, more accurate
+    MULTILINGUAL: 'Xenova/bert-base-multilingual-uncased-sentiment'  // ~665MB, supports Chinese
+  },
+
+  // Model quantization options (affects size and speed)
+  DTYPE_OPTIONS: {
+    Q4: 'q4',      // 4-bit, smallest (~5MB), fastest
+    Q8: 'q8',      // 8-bit, balanced
+    FP16: 'fp16',  // 16-bit float, more accurate
+    FP32: 'fp32'   // 32-bit float, most accurate, slowest
+  },
+
+  // Device options
+  DEVICE_OPTIONS: {
+    CPU: 'cpu',
+    WEBGPU: 'webgpu'  // Faster if supported by browser
+  },
+
+  // Default ML inference settings (user-configurable)
+  DEFAULT_INFERENCE_CONFIG: {
+    model: 'Xenova/transformers-small',  // Model variant
+    dtype: 'q4',                         // Quantization level
+    device: 'cpu',                       // Compute device
+    timeout: 100                         // Inference timeout (ms)
+  }
 };
 
 // Video title patterns that indicate low quality
@@ -163,5 +199,10 @@ export const DEFAULT_SETTINGS = {
   // Blocklist intensity
   blocklistIntensity: 'mild',
   // ML sentiment analysis (enabled by default for better UX)
-  enableMLSentiment: true
+  enableMLSentiment: true,
+  // ML inference configuration
+  mlModel: 'Xenova/transformers-small',
+  mlDtype: 'q4',
+  mlDevice: 'cpu',
+  mlTimeout: 100
 };

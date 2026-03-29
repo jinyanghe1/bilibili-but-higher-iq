@@ -1,6 +1,6 @@
 {
   "taskId": "026",
-  "status": "AVAILABLE",
-  "description": "Research ML parameters tuning (temperature/top-p)",
-  "dependsOn": ["021"]
+  "agent": "claude",
+  "status": "COMPLETED",
+  "completedAt": "2026-03-29T22:30:00+08:00"
 }

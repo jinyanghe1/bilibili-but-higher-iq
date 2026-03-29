@@ -338,40 +338,44 @@
     {
       "id": "026",
       "title": "Research ML parameters tuning (temperature/top-p)",
-      "status": "TODO",
+      "status": "DONE",
+      "agent": "claude, kimi",
       "files": [
         "ml/sentiment-analyzer.js",
-        "utils/constants.js"
+        "utils/constants.js",
+        "content/comment-filter.js"
       ],
-      "description": "Research @xenova/transformers temperature/top-p/top-k parameters. Test different model variants. Add configurable ML parameters in settings. Default temperature=0.7, topP=0.9.",
+      "description": "Added configurable ML scoring parameters (CONFIDENCE_THRESHOLD, NEUTRAL_SCORE, POSITIVE_BOOST, NEGATIVE_PENALTY, USE_CONFIDENCE_WEIGHTING). Added model selection (SMALL/DISTILBERT/MULTILINGUAL), dtype quantization (q4/q8/fp16/fp32), device options (cpu/webgpu). Added reloadPipeline() for dynamic config changes. Note: temperature/top-p not applicable to sentiment-analysis classification task.",
       "priority": "P1",
+      "completedAt": "2026-03-29T22:30:00+08:00",
       "dependsOn": ["021"]
     },
     {
       "id": "027",
       "title": "Closure operations: extract keywords from blocked users",
-      "status": "TODO",
+      "status": "DONE",
+      "agent": "kimi",
       "files": [
         "content/comment-filter.js",
-        "storage/blocklist-manager.js",
-        "ui/options/options.html"
+        "utils/keyword-extractor.js"
       ],
-      "description": "When blocking a user, offer to extract keywords from their comments and add to blocklist. User must confirm before adding. Provide checkbox option in block confirmation dialog. Implement basic Chinese word segmentation.",
+      "description": "When blocking a user, show confirmation dialog with extracted keywords from their comment. User can select keywords to add to blocklist. Implemented simple Chinese word segmentation using forward maximum matching.",
       "priority": "P1",
-      "dependsOn": ["022", "026"]
+      "dependsOn": ["022", "026"],
+      "completedAt": "2026-03-29T19:35:00+08:00"
     },
     {
       "id": "028",
       "title": "Implement import/export functionality",
-      "status": "TODO",
+      "status": "DONE",
+      "agent": "kimi",
       "files": [
-        "storage/blocklist-manager.js",
-        "ui/options/options.html",
         "ui/options/options.js"
       ],
-      "description": "Research chrome.storage import/export limitations. Implement JSON export/import for settings and blocklist. Support rule package format for sharing. Add export/import buttons in Options page.",
+      "description": "Enhanced JSON export/import functionality. Export downloads bqf-export-{date}.json file. Import validates file format, shows confirmation dialog with data preview (keyword count, blocked user count), merges with existing data. Background service worker already had exportData/importData handlers.",
       "priority": "P2",
-      "dependsOn": ["026"]
+      "dependsOn": ["026"],
+      "completedAt": "2026-03-29T19:45:00+08:00"
     },
     {
       "id": "029",
@@ -388,6 +392,36 @@
       "priority": "P0",
       "interval": "after each commit",
       "dependsOn": ["021"]
+    },
+    {
+      "id": "030",
+      "title": "Scope root npm test to stable unit regressions",
+      "status": "DONE",
+      "agent": "codex",
+      "files": [
+        "package.json"
+      ],
+      "description": "Fix the root test entrypoint so `npm test` only runs stable top-level Node regression tests, instead of accidentally discovering demo scripts or in-progress Playwright/E2E fixtures.",
+      "priority": "P1",
+      "startedAt": "2026-03-29 22:28:33 CST",
+      "dependsOn": [],
+      "completedAt": "2026-03-29 22:29:29 CST"
+    },
+    {
+      "id": "031",
+      "title": "Fix packaged build content-script bundle wiring",
+      "status": "DONE",
+      "agent": "codex",
+      "files": [
+        "scripts/build.js",
+        "scripts/validate.js",
+        "scripts/health-check.js"
+      ],
+      "description": "Make the build pipeline emit the bundled content script and rewrite packaged manifest paths for the dist output, then teach validation/health-check scripts to verify the current runtime artifacts.",
+      "priority": "P1",
+      "startedAt": "2026-03-29 22:36:14 CST",
+      "dependsOn": [],
+      "completedAt": "2026-03-29 22:38:39 CST"
     }
   ],
   "milestones": {

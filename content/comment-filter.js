@@ -13,6 +13,7 @@ import {
   deepQuerySelector,
   getTextContent
 } from '../utils/shadow-dom-utils.js';
+import { extractAndRankKeywords } from '../utils/keyword-extractor.js';
 
 import { analyzeSentiment } from '../ml/sentiment-analyzer.js';
 
@@ -117,7 +118,15 @@ class CommentFilter {
     // Layer 2: ML Sentiment analysis (if enabled)
     let mlScore = null;
     if (this.settings.enableMLSentiment && content) {
-      const mlResult = await analyzeSentiment(content);
+      // Build ML config from settings
+      const mlConfig = {
+        model: this.settings.mlModel,
+        dtype: this.settings.mlDtype,
+        device: this.settings.mlDevice
+      };
+      const timeout = this.settings.mlTimeout || 100;
+      
+      const mlResult = await analyzeSentiment(content, { timeout, config: mlConfig });
       if (!mlResult.fallback) {
         mlScore = mlResult.score;
         reasons.push(`ML: ${mlResult.score}`);
@@ -167,12 +176,12 @@ class CommentFilter {
       reasons.push(`Combined: ${score}`);
     }
 
-    // Determine action based on intensity
+    // Comments do not use a dim/warn state: once they fall below the visible
+    // threshold, hide them directly.
     const intensity = this.settings.blocklistIntensity || BLOCKLIST_INTENSITY.MILD;
     const thresholds = INTENSITY_THRESHOLDS[intensity] || INTENSITY_THRESHOLDS.mild;
-
-    const action = score <= thresholds.hide ? 'hide' :
-                   score <= thresholds.warning ? 'warn' : 'show';
+    const hideThreshold = Math.max(thresholds.warning, thresholds.hide);
+    const action = score <= hideThreshold ? 'hide' : 'show';
 
     return { score, reasons, action };
   }
@@ -224,11 +233,11 @@ class CommentFilter {
       };
     }
 
-    // No strong quality indicators, dim it
+    // In allowlist mode, comments without quality signals should stay hidden.
     return {
       score: 40,
       reasons: ['No quality indicators'],
-      action: 'warn'
+      action: 'hide'
     };
   }
 
@@ -531,19 +540,281 @@ class CommentFilter {
     const username = commentData.username || 'Unknown';
 
     btn.addEventListener('click', async () => {
-      if (confirm(`Block user "${username}"?`)) {
-        await blocklistManager.blockUser(uid, username);
-        await this.refreshData();
-        // Notify background to sync across tabs
-        chrome.runtime.sendMessage({
-          type: 'USER_BLOCKED',
-          uid,
-          username
-        });
+      const commentData = this.extractCommentData(commentEl);
+      const extractedKeywords = extractAndRankKeywords(commentData.content, 5);
+      
+      // Build confirmation dialog with keyword extraction option
+      const { shouldBlock, selectedKeywords } = await this.showBlockConfirmDialog(
+        username,
+        commentData.content,
+        extractedKeywords
+      );
+      
+      if (!shouldBlock) {
+        return; // User cancelled
       }
+      
+      // Block the user
+      await blocklistManager.blockUser(uid, username);
+      
+      // Add selected keywords to blocklist
+      if (selectedKeywords && selectedKeywords.length > 0) {
+        for (const keyword of selectedKeywords) {
+          await blocklistManager.addKeyword(keyword, 'extracted', 0.6);
+        }
+        console.log(`[BQF] Added ${selectedKeywords.length} keywords from blocked user`);
+      }
+
+      // Immediately hide the current comment
+      const blockedResult = {
+        reasons: ['User is blocked'],
+        action: 'hide'
+      };
+
+      // Dispatch custom event for immediate UI update
+      commentEl.dispatchEvent(new CustomEvent('bqf:blockUser', {
+        detail: { uid, username, result: blockedResult, commentEl },
+        bubbles: true,
+        composed: true
+      }));
+
+      await this.refreshData();
+
+      // Notify background to sync across tabs
+      chrome.runtime.sendMessage({
+        type: 'USER_BLOCKED',
+        uid,
+        username
+      });
     });
 
     footerEl.appendChild(btn);
+  }
+
+  /**
+   * Show block confirmation dialog with keyword extraction
+   * @param {string} username - Username to block
+   * @param {string} commentContent - Comment content
+   * @param {Array<{keyword: string, relevance: number}>} extractedKeywords - Extracted keywords
+   * @returns {Promise<{shouldBlock: boolean, selectedKeywords: string[]}>}
+   */
+  showBlockConfirmDialog(username, commentContent, extractedKeywords) {
+    return new Promise((resolve) => {
+      // Create modal overlay
+      const overlay = document.createElement('div');
+      overlay.className = 'bqf-block-dialog-overlay';
+      overlay.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.5);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 999999;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      `;
+
+      // Create dialog
+      const dialog = document.createElement('div');
+      dialog.className = 'bqf-block-dialog';
+      dialog.style.cssText = `
+        background: white;
+        border-radius: 12px;
+        padding: 24px;
+        max-width: 480px;
+        width: 90%;
+        max-height: 80vh;
+        overflow-y: auto;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+      `;
+
+      // Title
+      const title = document.createElement('h3');
+      title.textContent = `Block User "${username}"?`;
+      title.style.cssText = `
+        margin: 0 0 16px 0;
+        font-size: 18px;
+        font-weight: 600;
+        color: #333;
+      `;
+      dialog.appendChild(title);
+
+      // Comment preview
+      if (commentContent) {
+        const previewLabel = document.createElement('div');
+        previewLabel.textContent = 'Comment:';
+        previewLabel.style.cssText = `
+          font-size: 12px;
+          color: #666;
+          margin-bottom: 8px;
+        `;
+        dialog.appendChild(previewLabel);
+
+        const preview = document.createElement('div');
+        preview.textContent = commentContent.length > 100 
+          ? commentContent.slice(0, 100) + '...' 
+          : commentContent;
+        preview.style.cssText = `
+          background: #f5f5f5;
+          padding: 12px;
+          border-radius: 8px;
+          font-size: 14px;
+          color: #333;
+          margin-bottom: 20px;
+          line-height: 1.5;
+        `;
+        dialog.appendChild(preview);
+      }
+
+      // Keywords section
+      if (extractedKeywords && extractedKeywords.length > 0) {
+        const kwLabel = document.createElement('div');
+        kwLabel.textContent = 'Extract keywords to blocklist (optional):';
+        kwLabel.style.cssText = `
+          font-size: 13px;
+          color: #333;
+          margin-bottom: 12px;
+          font-weight: 500;
+        `;
+        dialog.appendChild(kwLabel);
+
+        const kwContainer = document.createElement('div');
+        kwContainer.style.cssText = `
+          display: flex;
+          flex-wrap: wrap;
+          gap: 8px;
+          margin-bottom: 20px;
+        `;
+
+        const selectedKeywords = new Set();
+
+        extractedKeywords.forEach(({ keyword, relevance }) => {
+          const label = document.createElement('label');
+          label.style.cssText = `
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 12px;
+            background: #f0f0f0;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 13px;
+            transition: background 0.2s;
+            user-select: none;
+          `;
+
+          const checkbox = document.createElement('input');
+          checkbox.type = 'checkbox';
+          checkbox.value = keyword;
+          checkbox.style.cssText = 'cursor: pointer;';
+          
+          checkbox.addEventListener('change', (e) => {
+            if (e.target.checked) {
+              selectedKeywords.add(keyword);
+              label.style.background = '#fb7299';
+              label.style.color = 'white';
+            } else {
+              selectedKeywords.delete(keyword);
+              label.style.background = '#f0f0f0';
+              label.style.color = '#333';
+            }
+          });
+
+          const text = document.createElement('span');
+          text.textContent = keyword;
+
+          // Relevance indicator
+          const relevanceIndicator = document.createElement('span');
+          relevanceIndicator.textContent = '•';
+          relevanceIndicator.style.cssText = `
+            color: ${relevance > 0.7 ? '#52c41a' : relevance > 0.4 ? '#faad14' : '#999'};
+            font-size: 10px;
+          `;
+
+          label.appendChild(checkbox);
+          label.appendChild(text);
+          label.appendChild(relevanceIndicator);
+          kwContainer.appendChild(label);
+        });
+
+        dialog.appendChild(kwContainer);
+
+        // Hint text
+        const hint = document.createElement('div');
+        hint.textContent = 'Selected keywords will be added to your blocklist';
+        hint.style.cssText = `
+          font-size: 12px;
+          color: #999;
+          margin-bottom: 20px;
+        `;
+        dialog.appendChild(hint);
+      }
+
+      // Buttons
+      const buttonContainer = document.createElement('div');
+      buttonContainer.style.cssText = `
+        display: flex;
+        gap: 12px;
+        justify-content: flex-end;
+      `;
+
+      const cancelBtn = document.createElement('button');
+      cancelBtn.textContent = 'Cancel';
+      cancelBtn.style.cssText = `
+        padding: 10px 20px;
+        border: 1px solid #ddd;
+        background: white;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 14px;
+        color: #666;
+      `;
+      cancelBtn.addEventListener('click', () => {
+        document.body.removeChild(overlay);
+        resolve({ shouldBlock: false, selectedKeywords: [] });
+      });
+
+      const blockBtn = document.createElement('button');
+      blockBtn.textContent = 'Block User';
+      blockBtn.style.cssText = `
+        padding: 10px 20px;
+        border: none;
+        background: #ff4d4f;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 14px;
+        color: white;
+        font-weight: 500;
+      `;
+      blockBtn.addEventListener('click', () => {
+        const selectedKeywords = Array.from(
+          dialog.querySelectorAll('input[type="checkbox"]:checked')
+        ).map(cb => cb.value);
+        document.body.removeChild(overlay);
+        resolve({ shouldBlock: true, selectedKeywords });
+      });
+
+      buttonContainer.appendChild(cancelBtn);
+      buttonContainer.appendChild(blockBtn);
+      dialog.appendChild(buttonContainer);
+
+      overlay.appendChild(dialog);
+      document.body.appendChild(overlay);
+
+      // Close on overlay click
+      overlay.addEventListener('click', (e) => {
+        if (e.target === overlay) {
+          document.body.removeChild(overlay);
+          resolve({ shouldBlock: false, selectedKeywords: [] });
+        }
+      });
+
+      // Focus trap
+      cancelBtn.focus();
+    });
   }
 
   /**
