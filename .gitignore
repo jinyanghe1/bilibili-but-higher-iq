@@ -47,3 +47,10 @@ temp/
 Thumbs.db
 ehthumbs.db
 Desktop.ini
+# Demo test data
+demo/.debug-data/
+demo/.user-data/
+demo/.ml-test-data/
+demo/screenshots/
+demo/node_modules/
+
