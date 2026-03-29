@@ -115,16 +115,17 @@ class CommentFilter {
     const content = commentData.content || '';
 
     // Layer 2: ML Sentiment analysis (if enabled)
+    let mlScore = null;
     if (this.settings.enableMLSentiment && content) {
       const mlResult = await analyzeSentiment(content);
       if (!mlResult.fallback) {
-        score = mlResult.score;
+        mlScore = mlResult.score;
         reasons.push(`ML: ${mlResult.score}`);
       }
     }
 
-    // Layer 3: Keyword matching (only if ML didn't run or for additional context)
-    if (content && !this.settings.enableMLSentiment) {
+    // Layer 3: Keyword matching (always run for additional context)
+    if (content) {
       const contentLower = content.toLowerCase();
 
       if (this.keywords.rageBait) {
@@ -151,6 +152,12 @@ class CommentFilter {
 
     // Ensure score within bounds
     score = Math.max(0, Math.min(100, score));
+
+    // Combine ML score if available (weighted: 60% ML, 40% keywords)
+    if (mlScore !== null) {
+      score = Math.round(mlScore * 0.6 + score * 0.4);
+      reasons.push(`Combined: ${score}`);
+    }
 
     // Determine action based on intensity
     const intensity = this.settings.blocklistIntensity || BLOCKLIST_INTENSITY.MILD;

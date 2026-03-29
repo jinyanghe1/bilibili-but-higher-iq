@@ -162,6 +162,6 @@ export const DEFAULT_SETTINGS = {
   commentFilterMode: 'blocklist',
   // Blocklist intensity
   blocklistIntensity: 'mild',
-  // ML sentiment analysis
-  enableMLSentiment: false
+  // ML sentiment analysis (enabled by default for better UX)
+  enableMLSentiment: true
 };

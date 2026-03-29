@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BQF ML 情感分析测试</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 20px;
+      background: #f5f5f5;
+    }
+    h1 {
+      color: #fb7299;
+    }
+    .test-section {
+      background: white;
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 20px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    .comment-box {
+      border: 2px solid #e3e3e3;
+      border-radius: 8px;
+      padding: 15px;
+      margin: 10px 0;
+      background: #fafafa;
+    }
+    .comment-box.filtered {
+      border-color: #fb7299;
+      background: rgba(251, 114, 153, 0.05);
+    }
+    .comment-text {
+      font-size: 14px;
+      line-height: 1.6;
+      margin-bottom: 10px;
+    }
+    .comment-meta {
+      font-size: 12px;
+      color: #999;
+    }
+    .score-badge {
+      display: inline-block;
+      padding: 4px 12px;
+      border-radius: 12px;
+      font-size: 12px;
+      font-weight: bold;
+      margin-left: 10px;
+    }
+    .score-high {
+      background: #52c41a;
+      color: white;
+    }
+    .score-medium {
+      background: #faad14;
+      color: white;
+    }
+    .score-low {
+      background: #ff4d4f;
+      color: white;
+    }
+    button {
+      background: #fb7299;
+      color: white;
+      border: none;
+      padding: 10px 24px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 14px;
+      margin: 5px;
+    }
+    button:hover {
+      background: #ff85a7;
+    }
+    button:disabled {
+      background: #ccc;
+      cursor: not-allowed;
+    }
+    #loading {
+      display: none;
+      color: #fb7299;
+      font-style: italic;
+    }
+    .progress-bar {
+      width: 100%;
+      height: 8px;
+      background: #e3e3e3;
+      border-radius: 4px;
+      overflow: hidden;
+      margin: 10px 0;
+    }
+    .progress-fill {
+      height: 100%;
+      background: #fb7299;
+      transition: width 0.3s;
+    }
+  </style>
+</head>
+<body>
+  <h1>🧠 Bilibili Quality Filter - ML 情感分析测试</h1>
+  
+  <div class="test-section">
+    <h2>📋 测试说明</h2>
+    <p>此页面测试 ML 情感分析功能。点击"加载模型"下载 ML 模型（约 50MB），然后点击"分析所有评论"。</p>
+    <p>分数说明：<span class="score-badge score-high">80-100 高质量</span> 
+       <span class="score-badge score-medium">40-79 中等</span> 
+       <span class="score-badge score-low">0-39 低质量</span></p>
+  </div>
+
+  <div class="test-section">
+    <h2>🎮 控制面板</h2>
+    <button id="loadModel">加载 ML 模型</button>
+    <button id="analyzeAll" disabled>分析所有评论</button>
+    <button id="toggleFilter">显示/隐藏过滤评论</button>
+    <div id="loading">⏳ 正在加载模型...</div>
+    <div class="progress-bar" id="progressBar" style="display:none;">
+      <div class="progress-fill" id="progressFill" style="width: 0%"></div>
+    </div>
+    <div id="status"></div>
+  </div>
+
+  <div class="test-section">
+    <h2>💬 测试评论（混合质量）</h2>
+    
+    <div class="comment-box" data-comment-id="1">
+      <div class="comment-text">这个视频讲得太好了！逻辑清晰，举例生动，学到了很多。</div>
+      <div class="comment-meta">
+        用户: 认真学习的小明
+        <span class="score" data-score="pending">等待分析...</span>
+      </div>
+    </div>
+
+    <div class="comment-box" data-comment-id="2">
+      <div class="comment-text">呵呵，又一个标题党，点进来浪费我时间</div>
+      <div class="comment-meta">
+        用户: 暴躁老哥
+        <span class="score" data-score="pending">等待分析...</span>
+      </div>
+    </div>
+
+    <div class="comment-box" data-comment-id="3">
+      <div class="comment-text">理性分析：视频中的观点有数据支撑，但第三部分的推论略显牵强，建议作者补充更多案例。</div>
+      <div class="comment-meta">
+        用户: 理性讨论者
+        <span class="score" data-score="pending">等待分析...</span>
+      </div>
+    </div>
+
+    <div class="comment-box" data-comment-id="4">
+      <div class="comment-text">6666666666 前排围观 火钳刘明</div>
+      <div class="comment-meta">
+        用户: 复读机一号
+        <span class="score" data-score="pending">等待分析...</span>
+      </div>
+    </div>
+
+    <div class="comment-box" data-comment-id="5">
+      <div class="comment-text">作者你能不能别胡说八道了？这明显就是错的，建议回去多读点书</div>
+      <div class="comment-meta">
+        用户: 键盘侠007
+        <span class="score" data-score="pending">等待分析...</span>
+      </div>
+    </div>
+
+    <div class="comment-box" data-comment-id="6">
+      <div class="comment-text">感谢分享！按照视频里的方法试了一下，确实有效。已三连支持。</div>
+      <div class="comment-meta">
+        用户: 实践出真知
+        <span class="score" data-score="pending">等待分析...</span>
+      </div>
+    </div>
+
+    <div class="comment-box" data-comment-id="7">
+      <div class="comment-text">第一！沙发！抢占前排！</div>
+      <div class="comment-meta">
+        用户: 抢沙发专业户
+        <span class="score" data-score="pending">等待分析...</span>
+      </div>
+    </div>
+
+    <div class="comment-box" data-comment-id="8">
+      <div class="comment-text">我觉得这个视频有几点值得商榷：首先是数据来源的可靠性，其次是论证过程的严密性...</div>
+      <div class="comment-meta">
+        用户: 学术派
+        <span class="score" data-score="pending">等待分析...</span>
+      </div>
+    </div>
+  </div>
+
+  <script type="module">
+    import { analyzeSentiment, isModelLoaded } from '../ml/sentiment-analyzer.js';
+
+    const loadBtn = document.getElementById('loadModel');
+    const analyzeBtn = document.getElementById('analyzeAll');
+    const toggleBtn = document.getElementById('toggleFilter');
+    const loading = document.getElementById('loading');
+    const progressBar = document.getElementById('progressBar');
+    const progressFill = document.getElementById('progressFill');
+    const status = document.getElementById('status');
+    
+    let filterEnabled = false;
+
+    // 拦截控制台输出以显示加载进度
+    const originalLog = console.log;
+    console.log = (...args) => {
+      originalLog.apply(console, args);
+      const text = args.join(' ');
+      if (text.includes('ML Model loading')) {
+        const match = text.match(/(\d+)%/);
+        if (match) {
+          progressFill.style.width = match[1] + '%';
+        }
+      }
+      status.textContent = text;
+    };
+
+    loadBtn.addEventListener('click', async () => {
+      loading.style.display = 'block';
+      progressBar.style.display = 'block';
+      loadBtn.disabled = true;
+      
+      try {
+        // 触发模型加载
+        await analyzeSentiment('test', 60000);
+        
+        if (isModelLoaded()) {
+          loading.textContent = '✅ 模型加载完成！';
+          analyzeBtn.disabled = false;
+        }
+      } catch (err) {
+        loading.textContent = '❌ 加载失败: ' + err.message;
+        loadBtn.disabled = false;
+      }
+    });
+
+    analyzeBtn.addEventListener('click', async () => {
+      analyzeBtn.disabled = true;
+      status.textContent = '正在分析评论...';
+      
+      const comments = document.querySelectorAll('.comment-box');
+      
+      for (let i = 0; i < comments.length; i++) {
+        const box = comments[i];
+        const text = box.querySelector('.comment-text').textContent;
+        const scoreEl = box.querySelector('.score');
+        
+        scoreEl.textContent = '分析中...';
+        
+        try {
+          const result = await analyzeSentiment(text, 10000);
+          
+          // 显示分数
+          let scoreClass = 'score-medium';
+          if (result.score >= 80) scoreClass = 'score-high';
+          else if (result.score < 40) scoreClass = 'score-low';
+          
+          scoreEl.innerHTML = `<span class="score-badge ${scoreClass}">${result.score}分</span>`;
+          if (result.fallback) {
+            scoreEl.innerHTML += ' (fallback)';
+          }
+          
+          // 存储分数
+          box.dataset.score = result.score;
+          
+          // 低质量评论标记
+          if (result.score < 40) {
+            box.classList.add('filtered');
+          }
+          
+        } catch (err) {
+          scoreEl.textContent = '分析失败';
+        }
+        
+        // 更新进度
+        status.textContent = `已分析 ${i + 1}/${comments.length} 条评论...`;
+      }
+      
+      status.textContent = '✅ 分析完成！';
+      analyzeBtn.disabled = false;
+    });
+
+    toggleBtn.addEventListener('click', () => {
+      filterEnabled = !filterEnabled;
+      const comments = document.querySelectorAll('.comment-box');
+      
+      comments.forEach(box => {
+        const score = parseInt(box.dataset.score);
+        if (score < 40) {
+          box.style.display = filterEnabled ? 'none' : 'block';
+        }
+      });
+      
+      toggleBtn.textContent = filterEnabled ? '显示过滤评论' : '隐藏过滤评论';
+    });
+  </script>
+</body>
+</html>

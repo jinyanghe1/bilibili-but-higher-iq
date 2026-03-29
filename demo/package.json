@@ -1,0 +1,12 @@
+{
+  "name": "bilibili-quality-filter-demo",
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "demo": "node bilibili-filter-demo.mjs",
+    "demo:headless": "HEADLESS=true node bilibili-filter-demo.mjs"
+  },
+  "dependencies": {
+    "playwright": "^1.40.0"
+  }
+}
